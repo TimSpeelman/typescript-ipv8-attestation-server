@@ -1,0 +1,31 @@
+/**
+ * For tsconfig manual see:
+ * @see https://www.typescriptlang.org/docs/handbook/tsconfig-json.html
+ * 
+ * Schema:
+ * @see http://json.schemastore.org/tsconfig
+ * @see https://www.typescriptlang.org/docs/handbook/react-&-webpack.html
+ */
+{
+    "compilerOptions": {
+        // "module": "umd",
+        "module": "commonjs",
+        "esModuleInterop": true,
+        "target": "es5",
+        "noImplicitAny": true,
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "sourceRoot": "./src/",
+        "outDir": "./dist",
+        "baseUrl": "./src/",
+        "allowUnreachableCode": false,
+        "typeRoots": [
+            "node_modules/@types"
+        ],
+    },
+    "exclude": [
+        "node_modules/*",
+        "dist",
+        "build"
+    ],
+}
