@@ -5,6 +5,7 @@ export interface ServerId {
 }
 
 export interface AttProcedure {
+    procedure_name: string;
     attribute_name: string;
     credential_name: string;
     server: ServerId;
@@ -16,6 +17,25 @@ export interface PeerId {
 }
 
 export interface Credential {
+    attribute_name: string;
     attribute_value: string;
     attribute_hash: string;
 }
+
+export interface ProcedureDescription {
+    procedure_name: string;
+    requirements: string[];
+    attribute_names: string[];
+}
+
+export interface ProcedureConfig {
+    desc: ProcedureDescription;
+    resolver: AttributeResolver;
+}
+
+export interface Attribute {
+    attribute_name: string;
+    attribute_value: string;
+}
+
+export type AttributeResolver = (credentials: Credential[]) => Promise<Attribute>;

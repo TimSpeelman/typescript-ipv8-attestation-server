@@ -1,7 +1,7 @@
-cd C:\Users\Tim\Dev\OpenWallet\ ; python2 openwallet\run_client.py --ip 127.0.0.1 --port 8124 --proxy_url https://127.0.0.1:8123 --proxy_cert cert.crt --ipv8
+cd C:/Users/Tim/Dev/OpenWallet/ ; python2 openwallet/run_client.py --ip 127.0.0.1 --port 8124 --proxy_url https://127.0.0.1:8123 --proxy_cert cert.crt --ipv8
 
-cd C:\Users\Tim\Dev\KvKAttestationServer\ ; python2 kvkattest\run_server2.py 
+cd C:/Users/Tim/Dev/KvKAttestationServer/ ; python2 kvkattest/run_server2.py 
 
-cd C:\Users\Tim\Dev\KvKAttestationServerTS\ ; ts-node src\run_server.ts
+cd C:/Users/Tim/Dev/KvKAttestationServerTS/ ; ts-node src/run_server.ts
 
-cd C:\Users\Tim\Dev\KvKAttestationServerTS\ ; ts-node src\run_client.ts
+cd C:/Users/Tim/Dev/KvKAttestationServerTS/ ; ts-node src/run_client.ts

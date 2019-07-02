@@ -8,6 +8,7 @@ const kvkServer = {
 };
 
 const kvkNrProcedure: AttProcedure = {
+    procedure_name: "p_kvknr",
     attribute_name: "kvknr",
     credential_name: "bsn",
     server: kvkServer,

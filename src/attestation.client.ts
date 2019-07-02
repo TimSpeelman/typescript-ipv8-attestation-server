@@ -14,10 +14,11 @@ export class AttestationClient {
         console.log("Initiating attestation procedure");
         const hash = await this.fetchCredentialHash(procedure.credential_name);
         const credential = {
+            attribute_name: procedure.credential_name,
             attribute_hash: hash,
             attribute_value: credential_value,
         };
-        await this.initiateTransaction(procedure, credential);
+        await this.initiateTransaction(procedure, [credential]);
         console.log("Polling for credential verification request..");
         await this.acceptFirstVerificationOnRequest(procedure.server.mid_b64, procedure.credential_name);
         console.log("Verification accepted.");
@@ -46,13 +47,13 @@ export class AttestationClient {
     }
 
     /** Initiate the transaction */
-    protected initiateTransaction(procedure: AttProcedure, credential: Credential) {
+    protected initiateTransaction(procedure: AttProcedure, credentials: Credential[]) {
         // Initiate the transaction
         const query_init = {
+            procedure_id: procedure.procedure_name,
             mid_hex: this.me.mid_hex,
             mid_b64: this.me.mid_b64,
-            attribute_hash: credential.attribute_hash,
-            pid: credential.attribute_value,
+            credentials: JSON.stringify(credentials),
         };
         return axios.get(`${procedure.server.http_address}/init?${queryString(query_init)}`);
     }
