@@ -77,7 +77,8 @@ export class IPv8API {
     public listAttestations(): Promise<Attestation[]> {
         return axios.get(this.api_base + "/attestation?type=attributes")
             .then((res) => res.data.map(
-                ([attribute_name, attribute_hash]: string[]) => ({ attribute_name, attribute_hash })))
+                ([attribute_name, attribute_hash, metadata, signer_mid_64]: string[]): Attestation =>
+                    ({ attribute_name, attribute_hash, metadata, signer_mid_64 })))
             .catch(this.handleError.bind(this));
     }
 
@@ -129,6 +130,8 @@ export class IPv8API {
 export interface Attestation {
     attribute_name: string;
     attribute_hash: string;
+    metadata: any;
+    signer_mid_64: string;
 }
 
 export interface AttestationRequest {
@@ -158,5 +161,5 @@ export interface VerificationOutputMap {
 
 export interface VerificationOutput {
     value_hash: string;
-     probability: number;
+    probability: number;
 }
