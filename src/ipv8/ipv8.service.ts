@@ -1,12 +1,12 @@
 import { interval, Subscription } from "rxjs";
 import { CallbackDict } from "../util/CallbackDict";
-import { IPv8API, VerificationOutputMap } from "./ipv8.api";
+import { AttestationRequest, IPv8API, VerificationOutputMap } from "./ipv8.api";
 
 export class IPv8Service {
 
     private connectionCallbacks = new CallbackDict<(b: boolean) => void>();
     private verificationCallbacks = new CallbackDict<(b: any) => void>();
-    private attestationRequestCallbacks = new CallbackDict<(b: boolean) => void>();
+    private attestationRequestCallbacks = new CallbackDict<(a: AttestationRequest) => void>();
 
     private peers: string[] = [];
     private interval: Subscription;
@@ -65,7 +65,7 @@ export class IPv8Service {
     }
 
     /** Promises an attestation request for a given mid */
-    public awaitAttestationRequest(mid_b64: string): Promise<boolean> {
+    public awaitAttestationRequest(mid_b64: string): Promise<AttestationRequest> {
         return new Promise((resolve) => this.attestationRequestCallbacks.register(mid_b64, resolve));
     }
 
@@ -101,8 +101,10 @@ export class IPv8Service {
             .then((requests) => this.handleAttestationRequests(requests));
     }
 
-    protected handleAttestationRequests(requests: any[]) {
-        requests.forEach((result) => this.attestationRequestCallbacks.call(result.mid)(result));
+    protected handleAttestationRequests(requests: AttestationRequest[]) {
+        requests.forEach((result) => {
+            this.attestationRequestCallbacks.call(result.mid_b64)(result);
+        });
     }
 
 }

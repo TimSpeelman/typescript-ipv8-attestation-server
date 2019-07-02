@@ -40,7 +40,7 @@ app.get("/data", (req, res) => {
     console.log("REST: Received /data", req.query);
     attServ.getData(mid)
         .then((data) => res.send(data))
-        .catch((err) => res.send(err));
+        .catch((err) => res.status(400).send(err));
 });
 
 app.listen(port, () => console.log(`Listening on port ${port}!`));

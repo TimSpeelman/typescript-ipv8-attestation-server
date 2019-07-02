@@ -1,4 +1,4 @@
-import { Dict } from "../util/Dict";
+import { Dict } from "../types/Dict";
 
 export class Database {
     constructor(private data: Dict<string>) { }

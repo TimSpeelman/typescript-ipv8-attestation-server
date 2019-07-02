@@ -1,4 +1,4 @@
-import { Dict } from "./Dict";
+import { Dict } from "../types/Dict";
 
 export class CallbackDict<T extends CallableFunction>  {
     private dict: Dict<T[]> = {};

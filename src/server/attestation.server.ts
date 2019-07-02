@@ -1,6 +1,6 @@
 import uuid = require("uuid/v4");
 import { IPv8Service } from "../ipv8/ipv8.service";
-import { Dict } from "../util/Dict";
+import { Dict } from "../types/Dict";
 import { Database } from "./database";
 
 interface Credential {
@@ -50,6 +50,10 @@ class Transaction {
         private db: Database,
     ) { }
 
+    public isComplete() {
+        return this.completed;
+    }
+
     public initiate() {
         console.log(`INFO: Transaction #${this.id}: initiating..`);
         return this.ipv8service.awaitVerification(
@@ -62,19 +66,18 @@ class Transaction {
             .catch(() => console.error(`ERROR: Transaction #${this.id}: Credential verification failed`));
     }
 
-    public isComplete() {
-        return this.completed;
-    }
-
     public handleVerificationResult(success: boolean) {
         console.log(`INFO: Transaction #${this.id}: Credential verification result:`, success);
         this.verified = success;
+        this.ipv8service.awaitAttestationRequest(this.peerId.mid_b64).then((req) => {
+            this.handleAttestationRequest();
+        });
     }
 
     public fetchAttributes(): Promise<string> {
         if (!this.verified) {
-            return Promise.reject(`ERROR: Transaction #${this.id}: ` +
-                +`Cannot fetch attributes before credential verified.`);
+            return Promise.reject(`ERROR: Transaction #${this.id}: `
+                + `Cannot fetch attributes before credential verified.`);
         } else {
             return this.db.get(this.credentials.attribute_value);
         }
@@ -84,7 +87,7 @@ class Transaction {
         console.log(`INFO: Transaction #${this.id}: Incoming attestation request.`);
         return this.fetchAttributes()
             .then((value) => { this.makeAttestation(value); })
-            .catch(console.error);
+            .catch((e) => console.error(`ERROR: Transaction #${this.id}: Could not fetch attributes.`));
     }
 
     public makeAttestation(value: string) {
@@ -92,7 +95,7 @@ class Transaction {
         const self = this;
         return this.ipv8service.attest(this.peerId.mid_b64, this.attr_name, value)
             .then(() => { self.completed = true; })
-            .catch(console.error);
+            .catch((e) => console.error(`ERROR: Transaction #${this.id}: Could not attest.`));
     }
 
 }
