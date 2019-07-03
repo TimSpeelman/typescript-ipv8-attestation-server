@@ -1,6 +1,7 @@
 import { AttestationClient } from "./attestation.client";
 import { clientPeer, serverPeer } from "./config";
 import { IPv8API } from "./ipv8/ipv8.api";
+import { VerifieeService } from "./services/VerifieeService";
 import { Dict } from "./types/Dict";
 import { Attribute, ClientProcedure, ProviderDesc } from "./types/types";
 
@@ -51,11 +52,13 @@ const clientId = {
 const clientAttributes: Dict<string> = {};
 
 async function run() {
+    const time = Date.now;
 
+    const verifieeService = new VerifieeService(clientId.api, time);
     const attClient = new AttestationClient({
         mid_hex: clientId.mid_hex,
         mid_b64: clientId.mid_b64,
-    }, clientId.api);
+    }, clientId.api, verifieeService);
 
     const do_bsn = true;
     const do_kvk = true;

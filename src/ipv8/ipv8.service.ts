@@ -1,4 +1,4 @@
-import { iif, interval, Subscription } from "rxjs";
+import { interval, Subscription } from "rxjs";
 import { CallbackDict } from "../util/CallbackDict";
 import { AttestationRequest, IPv8API, VerificationOutputMap } from "./ipv8.api";
 

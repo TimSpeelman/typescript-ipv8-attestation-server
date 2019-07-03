@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 import { interval } from "rxjs";
 import { Attestation, IPv8API } from "./ipv8/ipv8.api";
 import { Dict } from "./types/Dict";
+import { IVerifieeService } from "./types/IVerifieeService";
 import { Attribute, ClientProcedure, Credential, PeerId } from "./types/types";
 import { promiseTimer } from "./util/promiseTimer";
 import { queryString } from "./util/queryString";
@@ -12,7 +13,11 @@ const log = console.log;
 export class AttestationClient {
     public max_trials: number = 20;
     public poll_interval_ms: number = 1000;
-    constructor(private me: PeerId, private api: IPv8API) { }
+    constructor(
+        private me: PeerId,
+        private api: IPv8API,
+        private verifeeService: IVerifieeService,
+    ) { }
 
     public async execute(procedure: ClientProcedure, credential_values: Dict<string>) {
         const { desc } = procedure;
@@ -23,7 +28,8 @@ export class AttestationClient {
         log(`> Initiating transaction..`);
         const transaction_id = await this.initiateTransaction(procedure, credentials);
         log(`> Awaiting verification of credentials..`);
-        await this.acceptVerification(procedure.server.mid_b64, desc.requirements);
+        await this.verifeeService.stageVerification(
+            procedure.server.mid_b64, desc.requirements, Date.now() + 10000);
         log(`> Polling server for attributes..`);
         const data = await this.pollData(procedure, transaction_id);
         log(`> Data received from server:`);
@@ -82,32 +88,6 @@ export class AttestationClient {
         return axios.get(`${procedure.server.http_address}/init?${queryString(query_init)}`)
             .then((response) => response.data.transaction_id)
             .catch(this.logAxiosError.bind(this));
-    }
-
-    protected acceptVerification(mid_b64: string, credential_names: string[]): Promise<any> {
-        const promises = credential_names.map((cName) => this.acceptFirstVerificationOnRequest(mid_b64, cName));
-        return Promise.all(promises);
-    }
-
-    /** Polls until server's verification request comes in. Then accept it and resolve. */
-    protected acceptFirstVerificationOnRequest(mid_b64: string, attribute_name: string): Promise<boolean> {
-        return new Promise((resolve) => {
-            const sub = interval(1000).subscribe(() => {
-                this.api.listVerificationRequests().then(async (requests) => {
-                    const request = requests.find((r) => r.attribute_name === attribute_name && r.mid_b64 === mid_b64);
-                    log("Verification Requests: ", requests);
-                    if (request) {
-                        await this.requirePeer(mid_b64);
-                        log(`Peer requirement for verification: ok.`);
-                        this.api.allowVerify(request.mid_b64, request.attribute_name).then(() => {
-                            log(`Allowed server to verify '${attribute_name}'.`);
-                            sub.unsubscribe();
-                            resolve();
-                        });
-                    }
-                });
-            });
-        });
     }
 
     protected async pollData(procedure: ClientProcedure, transaction_id: string): Promise<Attribute[]> {
