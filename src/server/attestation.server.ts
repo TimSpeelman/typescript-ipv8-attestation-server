@@ -4,6 +4,8 @@ import { IPv8Service } from "../ipv8/ipv8.service";
 import { Dict } from "../types/Dict";
 import { Attribute, Credential, PeerId, ProcedureConfig } from "../types/types";
 
+const log = console.log;
+
 export class AttestationServer {
 
     private transactions: Dict<Transaction> = {};
@@ -24,33 +26,35 @@ export class AttestationServer {
         procedure: ProcedureConfig,
         credentials: Credential[],
         peer_id: PeerId
-    ) {
-        const t = new Transaction(this.ipv8service, procedure, credentials, peer_id);
-        this.transactions[peer_id.mid_b64] = t;
-        const promise = t.initiate();
-        return promise;
+    ): string {
+        const id = uuid();
+        const t = new Transaction(id, this.ipv8service, procedure, credentials, peer_id);
+        this.transactions[id] = t;
+        t.initiate();
+        return id;
     }
 
-    public getData(mid: string): Promise<Attribute> {
-        return this.transactions[mid]
-            ? this.transactions[mid].fetchAttributes()
-            : Promise.reject(`No transaction exists for mid ${mid}.`);
+    public getData(transaction_id: string): Promise<Attribute[]> {
+        return this.transactions[transaction_id]
+            ? this.transactions[transaction_id].fetchAttributes()
+            : Promise.reject(`ATT_SERV: No transaction exists with id ${transaction_id}.`);
     }
 
 }
 
 class Transaction {
 
-    private id = uuid();
     private verified = false;
     private completed = true;
 
     constructor(
+        private id: string,
         private ipv8service: IPv8Service,
         private procedure: ProcedureConfig,
         private credentials: Credential[],
         private peerId: PeerId,
     ) {
+        console.log(`ATT_SERV: Transaction #${id} has credentials: `, credentials);
         this.verified = credentials.length === 0;
     }
 
@@ -59,23 +63,25 @@ class Transaction {
     }
 
     public initiate() {
-        console.log(`INFO: Transaction #${this.id}: initiating..`);
+        console.log(`ATT_SERV: Transaction #${this.id}: initiating..`);
         this.verifyCredentialsIfRequired()
             .then((ok) => ok && this.attestToAttributes());
     }
 
-    public fetchAttributes(): Promise<Attribute> {
+    public fetchAttributes(): Promise<Attribute[]> {
         if (!this.verified) {
-            return Promise.reject(`ERROR: Transaction #${this.id}: `
-                + `Cannot fetch attributes before credential verified.`);
+            return Promise.reject(`[ERROR] ATT_SERV: Transaction #${this.id}:
+                Cannot fetch attributes before credential verified.`);
         } else {
+            log(`Resolving, given credentials:`);
+            log(JSON.stringify(this.credentials));
             return this.procedure.resolver(this.credentials);
         }
     }
 
     protected verifyCredentialsIfRequired(): Promise<boolean> {
         if (this.procedure.desc.requirements.length === 0) {
-            console.log(`INFO: Transaction #${this.id}: No verification required.`);
+            console.log(`ATT_SERV: Transaction #${this.id}: No verification required.`);
             return Promise.resolve(true);
         } else {
             const promises = this.credentials.map((credential) => this.verifySingleCredential(credential));
@@ -85,15 +91,16 @@ class Transaction {
                     return this.verified;
                 })
                 .catch(() => {
-                    console.error(`ERROR: Transaction #${this.id}: Credential verification failed`);
+                    console.error(`[ERROR] ATT_SERV: Transaction #${this.id}: Credential verification failed`);
                     return false;
                 });
         }
     }
 
     protected verifySingleCredential(credential: Credential) {
-        console.log(`INFO: Transaction #${this.id}: ` +
-            + `Awaiting verification of credential '${credential.attribute_hash}'.`);
+        console.log(`ATT_SERV: Transaction #${this.id}: `
+            + `Awaiting verification of credential '${credential.attribute_hash}' `
+            + `with value '${credential.attribute_value}'.`);
 
         return this.ipv8service.awaitVerification(
             this.peerId.mid_b64,
@@ -104,7 +111,7 @@ class Transaction {
     }
 
     protected attestToAttributes() {
-        console.log(`INFO: Transaction #${this.id}: Awaiting attestation request(s).`);
+        console.log(`ATT_SERV: Transaction #${this.id}: Awaiting attestation request(s).`);
 
         // TODO Multiple attributes
         this.ipv8service.awaitAttestationRequest(this.peerId.mid_b64).then((req) => {
@@ -113,20 +120,26 @@ class Transaction {
     }
 
     protected handleAttestationRequest(req: AttestationRequest) {
-        console.log(`INFO: Transaction #${this.id}: Incoming attestation request.`);
+        console.log(`ATT_SERV: Transaction #${this.id}: Incoming attestation request.`);
 
         return this.fetchAttributes()
-            .then((attribute) => { this.makeAttestation(attribute); })
-            .catch((e) => console.error(`ERROR: Transaction #${this.id}: Could not fetch attributes.`));
+            .then((attributes) => {
+                const attribute = attributes.find((a) => a.attribute_name === req.attribute_name);
+                if (attribute) {
+                    this.makeAttestation(attribute);
+                }
+            })
+            .catch((e) => console.error(`[ERROR] ATT_SERV: Transaction #${this.id}: Could not fetch attributes.`));
     }
 
     protected makeAttestation(attribute: Attribute) {
-        console.log(`INFO: Transaction #${this.id}: Making attestation of attribute '${attribute.attribute_name}'.`);
+        console.log(`ATT_SERV: Transaction #${this.id}: Making attestation` +
+            ` of attribute '${attribute.attribute_name}'.`);
         const self = this;
 
         return this.ipv8service.attest(this.peerId.mid_b64, attribute.attribute_name, attribute.attribute_value)
             .then(() => { self.completed = true; })
-            .catch((e) => console.error(`ERROR: Transaction #${this.id}: Could not attest.`));
+            .catch((e) => console.error(`[ERROR] ATT_SERV: Transaction #${this.id}: Could not attest.`));
     }
 
 }

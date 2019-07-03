@@ -1,6 +1,8 @@
-import { interval, Subscription } from "rxjs";
+import { iif, interval, Subscription } from "rxjs";
 import { CallbackDict } from "../util/CallbackDict";
 import { AttestationRequest, IPv8API, VerificationOutputMap } from "./ipv8.api";
+
+const log = console.log;
 
 export class IPv8Service {
 
@@ -28,19 +30,16 @@ export class IPv8Service {
     }
 
     /** Promises a boolean, true when the peer is found, or false when time runs out. */
-    public awaitConnection(mid_b64: string, mid_hex: string): Promise<any> {
-        console.log(`Looking for ${mid_b64} (hex: ${mid_hex})`);
-
-        if (this.peers.indexOf(mid_b64) >= 0) {
-            return Promise.resolve(true);
+    public async awaitConnection(mid_b64: string, mid_hex: string): Promise<any> {
+        log(`IPv8_SERVICE: Peer ${mid_b64} is known.`);
+        const peers = await this.api.listPeers();
+        if (peers.indexOf(mid_b64) >= 0) {
+            return true;
         } else {
-            return this.api.connectPeer(mid_hex)
-                .then(() => {
-                    console.log(`Peer ${mid_b64} found!`);
-
-                    return true;
-                })
-                .catch(console.error);
+            log(`IPv8_SERVICE: Looking for peer ${mid_b64}..`);
+            this.api.connectPeer(mid_hex);
+            return new Promise((resolve) => this.connectionCallbacks.register(mid_b64, resolve))
+                .then(() => log(`IPv8_SERVICE: Peer ${mid_b64} found!`));
         }
     }
 
@@ -50,15 +49,15 @@ export class IPv8Service {
         mid_hex: string,
         attribute_hash_b64: string,
         attribute_value: string): Promise<boolean> {
-
         return this.awaitConnection(mid_b64, mid_hex)
             .then(() => {
-                console.log(`Requesting verification from ${mid_b64}.`);
+                log(`IPv8_SERVICE: Requesting verification from ${mid_b64} on hash,value: `
+                    + `${attribute_hash_b64}, ${attribute_value}.`);
                 this.api.requestVerification(mid_b64, attribute_hash_b64, attribute_value);
                 return new Promise<boolean>((resolve) => {
                     this.verificationCallbacks.register(attribute_hash_b64, resolve);
                 }).then((answer) => {
-                    console.log(`Verification received from ${mid_b64}:`, answer);
+                    log(`IPv8_SERVICE: Verification received from ${mid_b64}:`, answer);
                     return answer;
                 });
             });

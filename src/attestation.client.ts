@@ -1,39 +1,63 @@
 import axios from "axios";
 import { interval } from "rxjs";
 import { Attestation, IPv8API } from "./ipv8/ipv8.api";
-import { AttProcedure, Credential, PeerId } from "./types/types";
+import { Dict } from "./types/Dict";
+import { ClientProcedure, Credential, PeerId } from "./types/types";
 import { promiseTimer } from "./util/promiseTimer";
 import { queryString } from "./util/queryString";
+import { strlist } from "./util/strlist";
+
+const log = console.log;
 
 export class AttestationClient {
-    public max_trials: number = 3;
+    public max_trials: number = 20;
     public poll_interval_ms: number = 1000;
     constructor(private me: PeerId, private api: IPv8API) { }
 
-    public async execute(procedure: AttProcedure, credential_value: string) {
-        console.log("Initiating attestation procedure");
-        const hash = await this.fetchCredentialHash(procedure.credential_name);
-        const credential = {
-            attribute_name: procedure.credential_name,
-            attribute_hash: hash,
-            attribute_value: credential_value,
-        };
-        await this.initiateTransaction(procedure, [credential]);
-        console.log("Polling for credential verification request..");
-        await this.acceptFirstVerificationOnRequest(procedure.server.mid_b64, procedure.credential_name);
-        console.log("Verification accepted.");
-        console.log("Polling for data..");
-        const data = await this.pollData(procedure);
-        console.log("Data received:", data);
-        console.log("Requesting attestation.");
-        await this.requestAttestation(procedure);
-        console.log("Polling for attestation..");
-        const attestation = await this.awaitAttestation(procedure);
-        console.log("Attestion received. Complete.");
+    public async execute(procedure: ClientProcedure, credential_values: Dict<string>) {
+        const { desc } = procedure;
+
+        log(`Initiating attestation procedure '${procedure.desc.procedure_name}'`);
+        log(`Fetching required credentials: ${strlist(desc.requirements)}.`);
+        const credentials = await this.fetchCredentials(desc.requirements, credential_values);
+        log(`Initiating transaction..`);
+        const transaction_id = await this.initiateTransaction(procedure, credentials);
+        log(`Awaiting verification of credentials.`);
+        await this.acceptVerification(procedure.server.mid_b64, desc.requirements);
+        log(`Polling server for attributes.`);
+        const data = await this.pollData(procedure, transaction_id);
+        log(`Data received from server:`);
+        log(data);
+        const expected_num_attrs = desc.attribute_names.length;
+        if (!(data instanceof Array)) {
+            throw new Error("Expected to receive array of attributes");
+        } else if (data.length !== expected_num_attrs) {
+            throw new Error(`Expected to receive ${expected_num_attrs} attributes, got ${data.length}.`);
+        }
+        log(`Requesting attestations of attributes: ${strlist(desc.attribute_names)}.`);
+        await this.requestAllAttestations(procedure);
+        log("Polling for attestation results..");
+        const attestations = await this.awaitAllAttestations(procedure);
+        log("Attestations received: ");
+        log(attestations);
+        log("Procedure complete!");
+
         return {
             data,
-            attestation
+            attestations
         };
+    }
+
+    protected fetchCredentials(credential_names: string[], values: Dict<string>): Promise<Credential[]> {
+        const promises = credential_names.map(async (cName) => {
+            const attribute_hash = await this.fetchCredentialHash(cName);
+            return {
+                attribute_name: cName,
+                attribute_hash,
+                attribute_value: values[cName],
+            };
+        });
+        return Promise.all(promises);
     }
 
     /** Check that we have an attestation for a given attribute */
@@ -47,26 +71,35 @@ export class AttestationClient {
     }
 
     /** Initiate the transaction */
-    protected initiateTransaction(procedure: AttProcedure, credentials: Credential[]) {
+    protected initiateTransaction(procedure: ClientProcedure, credentials: Credential[]): Promise<string> {
         // Initiate the transaction
         const query_init = {
-            procedure_id: procedure.procedure_name,
+            procedure_id: procedure.desc.procedure_name,
             mid_hex: this.me.mid_hex,
             mid_b64: this.me.mid_b64,
             credentials: JSON.stringify(credentials),
         };
-        return axios.get(`${procedure.server.http_address}/init?${queryString(query_init)}`);
+        return axios.get(`${procedure.server.http_address}/init?${queryString(query_init)}`)
+            .then((response) => response.data.transaction_id);
+    }
+
+    protected acceptVerification(mid_b64: string, credential_names: string[]): Promise<any> {
+        const promises = credential_names.map((cName) => this.acceptFirstVerificationOnRequest(mid_b64, cName));
+        return Promise.all(promises);
     }
 
     /** Polls until server's verification request comes in. Then accept it and resolve. */
     protected acceptFirstVerificationOnRequest(mid_b64: string, attribute_name: string): Promise<boolean> {
         return new Promise((resolve) => {
             const sub = interval(1000).subscribe(() => {
-                this.api.listVerificationRequests().then((requests) => {
+                this.api.listVerificationRequests().then(async (requests) => {
                     const request = requests.find((r) => r.attribute_name === attribute_name && r.mid_b64 === mid_b64);
-                    console.log("Verifreqs", requests);
+                    log("Verification Requests: ", requests);
                     if (request) {
+                        await this.requirePeer(mid_b64);
+                        log(`Peer requirement for verification: ok.`);
                         this.api.allowVerify(request.mid_b64, request.attribute_name).then(() => {
+                            log(`Allowed server to verify '${attribute_name}'.`);
                             sub.unsubscribe();
                             resolve();
                         });
@@ -77,41 +110,55 @@ export class AttestationClient {
     }
 
     /** Fetch the data from the server until it is there */
-    protected async pollData(procedure: AttProcedure) {
+    protected async pollData<T>(procedure: ClientProcedure, transaction_id: string): Promise<T> {
         let trial = 0;
         while (trial++ < this.max_trials) {
             await promiseTimer(this.poll_interval_ms);
             try {
-                const data = await this.fetchData(procedure);
+                const data = await this.fetchData(procedure, transaction_id);
                 return data;
             } catch (e) {
                 // try again
             }
         }
+        throw new Error("Failed to get data");
     }
 
     /** Fetch the data from the server */
-    protected fetchData(procedure: AttProcedure) {
-        const query_data = { mid: this.me.mid_b64 };
+    protected fetchData(procedure: ClientProcedure, transaction_id: string) {
+        const query_data = { mid: this.me.mid_b64, transaction_id };
         return axios.get(`${procedure.server.http_address}/data?${queryString(query_data)}`)
             .then((response) => response.data);
     }
 
+    protected async requestAllAttestations(procedure: ClientProcedure) {
+        const { attribute_names } = procedure.desc;
+        const promises = attribute_names.map((attr) => this.requestAttestation(procedure, attr));
+        return Promise.all(promises);
+    }
+
     /** Request the attestation */
-    protected async requestAttestation(procedure: AttProcedure) {
+    protected async requestAttestation(procedure: ClientProcedure, attribute_name: string) {
         return this.api.requestAttestation(
             procedure.server.mid_b64,
-            procedure.attribute_name,
+            attribute_name,
             "id_metadata"
         );
     }
 
+    protected async awaitAllAttestations(procedure: ClientProcedure): Promise<Dict<Attestation>> {
+        const { attribute_names } = procedure.desc;
+        const promises = attribute_names.map((attr) => this.awaitAttestation(procedure, attr));
+        return Promise.all(promises).then((results: Attestation[]) =>
+            results.reduce((map, r, i) => ({ ...map, [attribute_names[i]]: r }), {}));
+    }
+
     /** Await the receipt of attestations */
-    protected async awaitAttestation(procedure: AttProcedure): Promise<Attestation> {
+    protected async awaitAttestation(procedure: ClientProcedure, attr_name: string): Promise<Attestation> {
         return new Promise((resolve) => {
             const sub = interval(1000).subscribe(() => {
                 this.api.listAttestations().then((atts) => {
-                    const att = atts.find((a) => a.attribute_name === procedure.attribute_name);
+                    const att = atts.find((a) => a.attribute_name === attr_name);
                     if (att) {
                         sub.unsubscribe();
                         resolve(att);
@@ -119,6 +166,15 @@ export class AttestationClient {
                 });
             });
         });
+    }
+
+    protected async requirePeer(mid_b64: string): Promise<boolean> {
+        const peers = await this.api.listPeers();
+        if (peers.indexOf(mid_b64) >= 0) {
+            return true;
+        } else {
+            throw new Error(`Required peer ${mid_b64}, but is unknown!`);
+        }
     }
 
 }

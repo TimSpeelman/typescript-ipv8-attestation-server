@@ -1,3 +1,4 @@
+import { Dict } from "./Dict";
 
 export interface ServerId {
     http_address: string;
@@ -38,4 +39,14 @@ export interface Attribute {
     attribute_value: string;
 }
 
-export type AttributeResolver = (credentials: Credential[]) => Promise<Attribute>;
+export type AttributeResolver = (credentials: Credential[]) => Promise<Attribute[]>;
+
+export interface ProviderDesc {
+    id: ServerId;
+    procedures: Dict<ProcedureDescription>;
+}
+
+export interface ClientProcedure {
+    desc: ProcedureDescription;
+    server: ServerId;
+}

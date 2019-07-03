@@ -117,10 +117,11 @@ export class IPv8API {
     }
 
     protected handleError(res: AxiosError) {
-        console.error("Api Error", {
+        console.error("[ERROR] IPv8API: ", {
             path: res.request.path,
             status: res.response.status,
-            message: res.response.data.error.message
+            message: res.response.data.error.message ||
+                res.response.data
         });
         throw res;
     }

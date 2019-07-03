@@ -41,22 +41,22 @@ export class HttpAttestationServer {
                 return res.status(400).send({ error: `missing credentials ${missing.join(", ")}.` });
             }
 
-            this.attestationServer.initiateTransaction(
+            const transaction_id = this.attestationServer.initiateTransaction(
                 config,
                 credentialsParsed,
                 { mid_b64, mid_hex }
             );
-            res.send({ message: `Transaction started for mid ${mid_b64}.` });
+            res.send({ message: `Transaction started for mid ${mid_b64}.`, transaction_id });
         });
 
         app.get("/data", (req, res) => {
             res.setHeader("content-type", "application/json");
-            const { mid } = req.query;
-            if (!mid) {
-                res.status(400).send({ error: "requires mid" });
+            const { mid, transaction_id } = req.query;
+            if (!mid || !transaction_id) {
+                res.status(400).send({ error: "requires mid and transaction_id" });
             }
             console.log("REST: Received /data", req.query);
-            this.attestationServer.getData(mid)
+            this.attestationServer.getData(transaction_id)
                 .then((data) => res.send(data))
                 .catch((err) => res.status(400).send(err));
         });

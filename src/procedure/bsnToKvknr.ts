@@ -1,5 +1,5 @@
 import { Database } from "../server/database";
-import { Credential } from "../types/types";
+import { AttributeResolver, Credential } from "../types/types";
 
 const db = new Database({
     bsn1: "kvk1",
@@ -8,13 +8,13 @@ const db = new Database({
 const BSN_ATTR_NAME = "bsn";
 const KVKNR_ATTR_NAME = "kvknr";
 
-export const bsnToKvknrResolver = (credentials: Credential[]) => {
+export const bsnToKvknrResolver: AttributeResolver = (credentials: Credential[]) => {
     const bsn = credentials.find((c) => c.attribute_name === BSN_ATTR_NAME);
     if (!bsn) {
         throw new Error("Cannot resolve without BSN");
     }
-    return db.get(bsn.attribute_value).then((val) => ({
+    return db.get(bsn.attribute_value).then((val) => ([{
         attribute_name: KVKNR_ATTR_NAME,
         attribute_value: val,
-    }));
+    }]));
 };
