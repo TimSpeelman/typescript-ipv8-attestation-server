@@ -37,9 +37,9 @@ for i in [1, 2]:
     rest_manager.start(14410 + i)
 
     # Print the peer for reference
-    print "Starting peer", i
-    print "port", (14410 + i)
-    print "mid_b64", b64encode(ipv8.keys["anonymous id"].mid)
-    print "mid_hex", hexlify(ipv8.keys["anonymous id"].mid)
+    print("Starting peer", i)
+    print("port", (14410 + i))
+    print("mid_b64", b64encode(ipv8.keys["anonymous id"].mid))
+    print("mid_hex", hexlify(ipv8.keys["anonymous id"].mid))
 
 reactor.run()

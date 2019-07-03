@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { interval } from "rxjs";
 import { Attestation, IPv8API } from "./ipv8/ipv8.api";
 import { Dict } from "./types/Dict";
-import { ClientProcedure, Credential, PeerId } from "./types/types";
+import { Attribute, ClientProcedure, Credential, PeerId } from "./types/types";
 import { promiseTimer } from "./util/promiseTimer";
 import { queryString } from "./util/queryString";
 import { strlist } from "./util/strlist";
@@ -81,7 +81,7 @@ export class AttestationClient {
         };
         return axios.get(`${procedure.server.http_address}/init?${queryString(query_init)}`)
             .then((response) => response.data.transaction_id)
-            .catch(this.handleAxiosError.bind(this));
+            .catch(this.logAxiosError.bind(this));
     }
 
     protected acceptVerification(mid_b64: string, credential_names: string[]): Promise<any> {
@@ -110,14 +110,30 @@ export class AttestationClient {
         });
     }
 
+    protected async pollData(procedure: ClientProcedure, transaction_id: string): Promise<Attribute[]> {
+        const data = await this.pollAllData(procedure, transaction_id);
+        if (!(data instanceof Array)) {
+            throw new Error("Expected to receive array of attributes");
+        }
+        const attr_names = procedure.desc.attribute_names;
+        const relevant_data = data.filter((d) => attr_names.indexOf(d.attribute_name) >= 0);
+
+        if (relevant_data.length !== attr_names.length) {
+            throw new Error(`Expected ${attr_names.length} attributes, received ${relevant_data.length}.`);
+        }
+        return relevant_data;
+    }
+
     /** Fetch the data from the server until it is there */
-    protected async pollData<T>(procedure: ClientProcedure, transaction_id: string): Promise<T> {
+    protected async pollAllData<T>(procedure: ClientProcedure, transaction_id: string): Promise<T> {
         let trial = 0;
         while (trial++ < this.max_trials) {
             await promiseTimer(this.poll_interval_ms);
             try {
                 const data = await this.fetchData(procedure, transaction_id);
-                return data;
+                if (data.length > 0) {
+                    return data;
+                }
             } catch (e) {
                 // try again
             }
@@ -130,25 +146,27 @@ export class AttestationClient {
         const query_data = { mid: this.me.mid_b64, transaction_id };
         return axios.get(`${procedure.server.http_address}/data?${queryString(query_data)}`)
             .then((response) => response.data)
-            .catch(this.handleAxiosError.bind(this));
+            .catch(this.logAxiosError.bind(this));
     }
 
     protected async requestAndAwaitAttestations(procedure: ClientProcedure) {
         const { attribute_names } = procedure.desc;
         const attestations: Attestation[] = [];
         for (const attr of attribute_names) {
+            log(`> Requesting attestation of ${attr}.`);
             await this.requestAttestation(procedure, attr);
             const attestation = await this.awaitAttestation(procedure, attr);
+            log(`> Attestation of ${attr} complete.`);
             attestations.push(attestation);
         }
         return attestations;
     }
 
-    protected async requestAllAttestations(procedure: ClientProcedure) {
-        const { attribute_names } = procedure.desc;
-        const promises = attribute_names.map((attr) => this.requestAttestation(procedure, attr));
-        return Promise.all(promises);
-    }
+    // protected async requestAllAttestations(procedure: ClientProcedure) {
+    //     const { attribute_names } = procedure.desc;
+    //     const promises = attribute_names.map((attr) => this.requestAttestation(procedure, attr));
+    //     return Promise.all(promises);
+    // }
 
     /** Request the attestation */
     protected async requestAttestation(procedure: ClientProcedure, attribute_name: string) {
@@ -190,7 +208,7 @@ export class AttestationClient {
         }
     }
 
-    protected handleAxiosError(error: AxiosError) {
+    protected logAxiosError(error: AxiosError) {
         console.error("Request failed with status ",
             error.response.status, "and data", error.response.data);
         throw error;

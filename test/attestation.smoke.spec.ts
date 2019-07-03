@@ -22,14 +22,14 @@ describe("Attestation Transaction", function () {
         const server = new AttestationServer(service, db);
 
         // Client initiates the transaction (over HTTP)
-        server.initiateTransaction(client_bsn, client_mid)
+        server.executeTransaction(client_bsn, client_mid)
             .then(() => {
                 // We expect that the peer receives a BSN verification request
                 // We expect that the peer accepts the verification: see mock.
                 // Here: client has verified
 
                 // Client then asks for the data (over HTTP)
-                server.getData(client_mid)
+                server.getQueuedAttributes(client_mid)
                     .then((kvknr) => {
                         expect(kvknr).to.equal(expected_kvknr);
 

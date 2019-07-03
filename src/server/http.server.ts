@@ -41,7 +41,7 @@ export class HttpAttestationServer {
                 return res.status(400).send({ error: `missing credentials ${missing.join(", ")}.` });
             }
 
-            const transaction_id = this.attestationServer.initiateTransaction(
+            const transaction_id = this.attestationServer.executeTransaction(
                 config,
                 credentialsParsed,
                 { mid_b64, mid_hex }
@@ -56,9 +56,7 @@ export class HttpAttestationServer {
                 res.status(400).send({ error: "requires mid and transaction_id" });
             }
             console.log("REST: Received /data", req.query);
-            this.attestationServer.getData(transaction_id)
-                .then((data) => res.send(data))
-                .catch((err) => res.status(400).send(err));
+            res.send(this.attestationServer.getQueuedAttributes(mid));
         });
 
         app.listen(this.port, () => console.log(`Listening on port ${this.port}!`));

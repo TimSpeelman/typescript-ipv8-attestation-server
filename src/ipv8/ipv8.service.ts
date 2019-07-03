@@ -10,7 +10,6 @@ export class IPv8Service {
     private verificationCallbacks = new CallbackDict<(b: any) => void>();
     private attestationRequestCallbacks = new CallbackDict<(a: AttestationRequest) => void>();
 
-    private peers: string[] = [];
     private interval: Subscription;
 
     constructor(private api: IPv8API) { }
@@ -79,7 +78,6 @@ export class IPv8Service {
     }
 
     protected handleNewPeers(peers: string[]) {
-        this.peers = peers;
         peers.forEach((peer) => this.connectionCallbacks.call(peer)(true));
     }
 
@@ -102,6 +100,7 @@ export class IPv8Service {
 
     protected handleAttestationRequests(requests: AttestationRequest[]) {
         requests.forEach((result) => {
+            this.attestationRequestCallbacks.call("*")(result);
             this.attestationRequestCallbacks.call(result.mid_b64)(result);
         });
     }
