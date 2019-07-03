@@ -1,12 +1,16 @@
+import fs from "fs";
+
+const peers = JSON.parse(fs.readFileSync("temp/peers.json", { encoding: "utf8" }));
+
 export const serverPeer = {
-    ipv8_url: "http://localhost:14411",
+    ipv8_url: `http://localhost:${peers.server.port}`,
     rest_port: 3000,
-    mid_b64: "pWczWZ+y2As8bcCRsOanolD/BdU=",
-    mid_hex: "a56733599fb2d80b3c6dc091b0e6a7a250ff05d5",
+    mid_b64: peers.server.mid_b64,
+    mid_hex: peers.server.mid_hex,
 };
 
 export const clientPeer = {
-    ipv8_url: "http://localhost:14412",
-    mid_b64: "9PD0vQgcizKYDqRUNmvCcdh4jDs=",
-    mid_hex: "f4f0f4bd081c8b32980ea454366bc271d8788c3b",
+    ipv8_url: `http://localhost:${peers.client.port}`,
+    mid_b64: peers.client.mid_b64,
+    mid_hex: peers.client.mid_hex,
 };
