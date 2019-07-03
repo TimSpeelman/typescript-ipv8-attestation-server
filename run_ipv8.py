@@ -9,7 +9,7 @@ from binascii import hexlify
 import json
 import os
 
-names = ['client', 'server']
+names = ['server', 'client']
 data = {}
 
 # Launch two IPv8 services.
