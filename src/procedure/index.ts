@@ -2,6 +2,7 @@ import { Dict } from "../types/Dict";
 import { ProcedureConfig } from "../types/types";
 import { bsnResolver } from "./bsn";
 import { bsnToKvknrResolver } from "./bsnToKvknr";
+import { multiResolver } from "./multi";
 
 export const config: Dict<ProcedureConfig> = {
     p_kvknr: {
@@ -19,5 +20,13 @@ export const config: Dict<ProcedureConfig> = {
             requirements: [],
         },
         resolver: bsnResolver,
+    },
+    p_multi: {
+        desc: {
+            attribute_names: ["kvk_att1", "kvk_att2"],
+            procedure_name: "p_multi",
+            requirements: ["bsn"],
+        },
+        resolver: multiResolver,
     }
 };

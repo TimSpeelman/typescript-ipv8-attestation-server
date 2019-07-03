@@ -8,7 +8,7 @@ export class HttpAttestationServer {
     constructor(
         private configuration: Dict<ProcedureConfig>,
         private attestationServer: AttestationServer,
-        private port: number = 3000
+        private port: number
     ) { }
 
     public start() {

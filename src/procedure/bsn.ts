@@ -3,5 +3,5 @@ import { AttributeResolver } from "../types/types";
 
 export const bsnResolver: AttributeResolver = () => Promise.resolve([{
     attribute_name: "bsn",
-    attribute_value: "bsn1",
+    attribute_value: "bsn2",
 }]);

@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { interval } from "rxjs";
 import { Attestation, IPv8API } from "./ipv8/ipv8.api";
 import { Dict } from "./types/Dict";
@@ -16,17 +16,17 @@ export class AttestationClient {
 
     public async execute(procedure: ClientProcedure, credential_values: Dict<string>) {
         const { desc } = procedure;
-
-        log(`Initiating attestation procedure '${procedure.desc.procedure_name}'`);
-        log(`Fetching required credentials: ${strlist(desc.requirements)}.`);
+        log(`============= START =============`);
+        log(`> Initiating attestation procedure '${procedure.desc.procedure_name}'`);
+        log(`> Fetching required credentials: ${strlist(desc.requirements)}.`);
         const credentials = await this.fetchCredentials(desc.requirements, credential_values);
-        log(`Initiating transaction..`);
+        log(`> Initiating transaction..`);
         const transaction_id = await this.initiateTransaction(procedure, credentials);
-        log(`Awaiting verification of credentials.`);
+        log(`> Awaiting verification of credentials..`);
         await this.acceptVerification(procedure.server.mid_b64, desc.requirements);
-        log(`Polling server for attributes.`);
+        log(`> Polling server for attributes..`);
         const data = await this.pollData(procedure, transaction_id);
-        log(`Data received from server:`);
+        log(`> Data received from server:`);
         log(data);
         const expected_num_attrs = desc.attribute_names.length;
         if (!(data instanceof Array)) {
@@ -34,13 +34,13 @@ export class AttestationClient {
         } else if (data.length !== expected_num_attrs) {
             throw new Error(`Expected to receive ${expected_num_attrs} attributes, got ${data.length}.`);
         }
-        log(`Requesting attestations of attributes: ${strlist(desc.attribute_names)}.`);
-        await this.requestAllAttestations(procedure);
-        log("Polling for attestation results..");
-        const attestations = await this.awaitAllAttestations(procedure);
-        log("Attestations received: ");
+        log(`> Requesting attestations of attributes: ${strlist(desc.attribute_names)}..`);
+        const attestations = await this.requestAndAwaitAttestations(procedure);
+        // log("> Polling for attestation results..");
+        // const attestations = await this.awaitAllAttestations(procedure);
+        log("> Attestations received: ");
         log(attestations);
-        log("Procedure complete!");
+        log(`=========== COMPLETE ============`);
 
         return {
             data,
@@ -80,7 +80,8 @@ export class AttestationClient {
             credentials: JSON.stringify(credentials),
         };
         return axios.get(`${procedure.server.http_address}/init?${queryString(query_init)}`)
-            .then((response) => response.data.transaction_id);
+            .then((response) => response.data.transaction_id)
+            .catch(this.handleAxiosError.bind(this));
     }
 
     protected acceptVerification(mid_b64: string, credential_names: string[]): Promise<any> {
@@ -128,7 +129,19 @@ export class AttestationClient {
     protected fetchData(procedure: ClientProcedure, transaction_id: string) {
         const query_data = { mid: this.me.mid_b64, transaction_id };
         return axios.get(`${procedure.server.http_address}/data?${queryString(query_data)}`)
-            .then((response) => response.data);
+            .then((response) => response.data)
+            .catch(this.handleAxiosError.bind(this));
+    }
+
+    protected async requestAndAwaitAttestations(procedure: ClientProcedure) {
+        const { attribute_names } = procedure.desc;
+        const attestations: Attestation[] = [];
+        for (const attr of attribute_names) {
+            await this.requestAttestation(procedure, attr);
+            const attestation = await this.awaitAttestation(procedure, attr);
+            attestations.push(attestation);
+        }
+        return attestations;
     }
 
     protected async requestAllAttestations(procedure: ClientProcedure) {
@@ -175,6 +188,12 @@ export class AttestationClient {
         } else {
             throw new Error(`Required peer ${mid_b64}, but is unknown!`);
         }
+    }
+
+    protected handleAxiosError(error: AxiosError) {
+        console.error("Request failed with status ",
+            error.response.status, "and data", error.response.data);
+        throw error;
     }
 
 }

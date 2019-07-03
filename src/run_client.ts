@@ -1,13 +1,14 @@
 import { AttestationClient } from "./attestation.client";
+import { clientPeer, serverPeer } from "./config";
 import { IPv8API } from "./ipv8/ipv8.api";
 import { Dict } from "./types/Dict";
-import { AttProcedure, Attribute, ClientProcedure, ProcedureDescription, ProviderDesc, ServerId } from "./types/types";
+import { Attribute, ClientProcedure, ProviderDesc } from "./types/types";
 
 const providers: Dict<ProviderDesc> = {
     kvk: {
         id: {
-            http_address: "http://localhost:3000",
-            mid_b64: "tAX/kPZ1E3KM/miu/4d2c1Ni9yw=",
+            http_address: `http://localhost:${serverPeer.rest_port}`,
+            mid_b64: serverPeer.mid_b64,
         },
         procedures: {
             p_kvknr: {
@@ -19,73 +20,66 @@ const providers: Dict<ProviderDesc> = {
                 procedure_name: "p_bsn",
                 attribute_names: ["bsn"],
                 requirements: [],
+            },
+            p_multi: {
+                procedure_name: "p_multi",
+                attribute_names: ["kvk_att1", "kvk_att2"],
+                requirements: ["bsn"],
             }
         }
     }
 };
 
-const testClient = {
-    api: new IPv8API("http://localhost:14410"),
-    mid_hex: "3bb15e42430bba44503fe2aba5568d4191401f01",
-    mid_b64: "O7FeQkMLukRQP+KrpVaNQZFAHwE=",
-    credential_value: "bsn1",
+function getProcedure(providerName: string, procedureId: string): ClientProcedure {
+    if (!(providerName in providers)) { throw new Error(`Unknown provider ${providerName}.`); }
+
+    const procedures = providers[providerName].procedures;
+    if (!(procedureId in procedures)) { throw new Error(`Unknown procedure ${procedureId}.`); }
+    return {
+        desc: procedures[procedureId],
+        server: providers[providerName].id,
+    };
+}
+
+const clientId = {
+    api: new IPv8API(clientPeer.ipv8_url),
+    mid_hex: clientPeer.mid_hex,
+    mid_b64: clientPeer.mid_b64,
 };
 
-// FIXME
-const client_attributes = {
-    // bsn: "a3531041-eb80-4c35-af3f-1f52f1e80c9c"
-    bsn: "bsn1"
-};
+/** Cache of client's attributes */
+const clientAttributes: Dict<string> = {};
 
 async function run() {
 
     const attClient = new AttestationClient({
-        mid_hex: testClient.mid_hex,
-        mid_b64: testClient.mid_b64,
-    }, testClient.api);
+        mid_hex: clientId.mid_hex,
+        mid_b64: clientId.mid_b64,
+    }, clientId.api);
 
-    const procedureBSN: ClientProcedure = {
-        desc: providers.kvk.procedures.p_bsn,
-        server: providers.kvk.id,
-    };
-
-    const procedureKVK: ClientProcedure = {
-        desc: providers.kvk.procedures.p_kvknr,
-        server: providers.kvk.id,
-    };
-
-    const do_bsn = false;
+    const do_bsn = true;
     const do_kvk = true;
 
     if (do_bsn) {
-        console.log("First fetching BSN");
-        await attClient.execute(procedureBSN, client_attributes)
-            .then(({ data, attestations }: any) => {
-                data.forEach((attr: Attribute) => {
-                    // @ts-ignore
-                    client_attributes[attr.attribute_name] = attr.attribute_value;
-                });
-                testClient.api.listAttestations().then((atts) => {
-                    console.log("Client's attestations:");
-                    console.log(atts);
-                });
-            });
-
+        await executeProcedure("kvk", "p_bsn");
     }
     if (do_kvk) {
-        console.log("Now fetching KVKnr");
-        await attClient.execute(procedureKVK, client_attributes)
+        await executeProcedure("kvk", "p_multi");
+    }
+
+    async function executeProcedure(providerName: string, procedureId: string) {
+        await attClient.execute(getProcedure(providerName, procedureId), clientAttributes)
             .then(({ data, attestations }: any) => {
                 data.forEach((attr: Attribute) => {
                     // @ts-ignore
-                    client_attributes[attr.attribute_name] = attr.attribute_value;
+                    clientAttributes[attr.attribute_name] = attr.attribute_value;
                 });
-                testClient.api.listAttestations().then((atts) => {
-                    console.log("Client's attestations:");
-                    console.log(atts);
-                });
-            });
 
+            });
+        await clientId.api.listAttestations().then((atts) => {
+            console.log("Client's attestations:");
+            console.log(atts);
+        });
     }
 }
 

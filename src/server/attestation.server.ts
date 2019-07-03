@@ -46,6 +46,7 @@ class Transaction {
 
     private verified = false;
     private completed = true;
+    private unattested: string[] = [];
 
     constructor(
         private id: string,
@@ -56,6 +57,7 @@ class Transaction {
     ) {
         console.log(`ATT_SERV: Transaction #${id} has credentials: `, credentials);
         this.verified = credentials.length === 0;
+        this.unattested = procedure.desc.attribute_names.slice();
     }
 
     public isComplete() {
@@ -110,13 +112,15 @@ class Transaction {
         );
     }
 
-    protected attestToAttributes() {
+    protected async attestToAttributes() {
         console.log(`ATT_SERV: Transaction #${this.id}: Awaiting attestation request(s).`);
 
         // TODO Multiple attributes
-        this.ipv8service.awaitAttestationRequest(this.peerId.mid_b64).then((req) => {
-            this.handleAttestationRequest(req);
-        });
+        while (this.unattested.length > 0) {
+            await this.ipv8service.awaitAttestationRequest(this.peerId.mid_b64).then((req) => {
+                this.handleAttestationRequest(req);
+            });
+        }
     }
 
     protected handleAttestationRequest(req: AttestationRequest) {
@@ -124,9 +128,9 @@ class Transaction {
 
         return this.fetchAttributes()
             .then((attributes) => {
-                const attribute = attributes.find((a) => a.attribute_name === req.attribute_name);
-                if (attribute) {
-                    this.makeAttestation(attribute);
+                const attribute_name = this.unattested.find((a) => a === req.attribute_name);
+                if (attribute_name) {
+                    this.makeAttestation(attributes.find((a) => a.attribute_name === attribute_name));
                 }
             })
             .catch((e) => console.error(`[ERROR] ATT_SERV: Transaction #${this.id}: Could not fetch attributes.`));
