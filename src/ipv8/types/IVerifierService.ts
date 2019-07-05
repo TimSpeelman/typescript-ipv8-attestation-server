@@ -1,4 +1,4 @@
-import { Credential } from "./types";
+import { Credential } from "../../types/types";
 
 /**
  * The VerifierService verifies attributes through IPv8 and

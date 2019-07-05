@@ -1,8 +1,8 @@
 import uuid = require("uuid/v4");
 import { IPv8Service } from "../ipv8/IPv8Service";
+import { IAttesterService } from "../ipv8/types/IAttesterService";
+import { IVerifierService } from "../ipv8/types/IVerifierService";
 import { Dict } from "../types/Dict";
-import { IAttesterService } from "../types/IAttesterService";
-import { IVerifierService } from "../types/IVerifierService";
 import { Attribute, Credential, PeerId, ProcedureConfig } from "../types/types";
 
 const log = console.log;

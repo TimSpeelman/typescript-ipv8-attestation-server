@@ -1,11 +1,11 @@
 import { serverPeer } from "./config";
+import { AttesterService } from "./ipv8/AttesterService";
 import { IPv8API } from "./ipv8/IPv8API";
 import { IPv8Service } from "./ipv8/IPv8Service";
+import { VerifierService } from "./ipv8/VerifierService";
 import { config } from "./procedure";
 import { AttestationServer } from "./server/attestation.server";
 import { HttpAttestationServer } from "./server/http.server";
-import { AttesterService } from "./services/AttesterService";
-import { VerifierService } from "./services/VerifierService";
 
 const time = Date.now;
 const api = new IPv8API(serverPeer.ipv8_url);

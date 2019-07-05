@@ -1,8 +1,8 @@
 import axios, { AxiosError } from "axios";
 import { interval } from "rxjs";
 import { Attestation, IPv8API } from "./ipv8/IPv8API";
+import { IVerifieeService } from "./ipv8/types/IVerifieeService";
 import { Dict } from "./types/Dict";
-import { IVerifieeService } from "./types/IVerifieeService";
 import { Attribute, ClientProcedure, Credential, PeerId } from "./types/types";
 import { promiseTimer } from "./util/promiseTimer";
 import { queryString } from "./util/queryString";

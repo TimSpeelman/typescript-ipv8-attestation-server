@@ -1,7 +1,7 @@
-import { IPv8Service } from "../ipv8/IPv8Service";
 import { Dict } from "../types/Dict";
-import { IVerifierService, VerifyOptions } from "../types/IVerifierService";
 import { Credential } from "../types/types";
+import { IPv8Service } from "./IPv8Service";
+import { IVerifierService, VerifyOptions } from "./types/IVerifierService";
 
 const log = console.log;
 

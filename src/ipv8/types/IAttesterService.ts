@@ -1,5 +1,5 @@
-import { AttestationRequest } from "../ipv8/IPv8API";
-import { Attribute } from "./types";
+import { Attribute } from "../../types/types";
+import { AttestationRequest } from "../IPv8API";
 
 /**
  * The AttesterService holds a list of granted attestations.
