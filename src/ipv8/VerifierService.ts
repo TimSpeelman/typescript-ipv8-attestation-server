@@ -1,6 +1,6 @@
-import { Dict } from "../types/Dict";
-import { Credential } from "../types/types";
 import { IPv8Service } from "./IPv8Service";
+import { AttributeWithHash } from "./types/Attribute";
+import { Dict } from "./types/Dict";
 import { IVerifierService, VerifyOptions } from "./types/IVerifierService";
 
 const log = console.log;
@@ -12,7 +12,7 @@ export class VerifierService implements IVerifierService {
     constructor(private ipv8service: IPv8Service, private time: () => number) { }
 
     public verify(
-        mid_b64: string, mid_hex: string, credentials: Credential[], options?: VerifyOptions): Promise<boolean> {
+        mid_b64: string, mid_hex: string, credentials: AttributeWithHash[], options?: VerifyOptions): Promise<boolean> {
 
         return Promise.all(credentials.map((c) => this.verifySingle(mid_b64, mid_hex, c, options)))
             .then((oks) => !oks.some((ok) => !ok));

@@ -1,8 +1,8 @@
 import { AttestationRequest } from "./IPv8API";
 import { IPv8Service } from "./IPv8Service";
+import { Attribute } from "./types/Attribute";
+import { Dict } from "./types/Dict";
 import { IAttesterService, NonStagedRequestCallback, QueuedAttestation } from "./types/IAttesterService";
-import { Dict } from "../types/Dict";
-import { Attribute } from "../types/types";
 
 export class AttesterService implements IAttesterService {
 

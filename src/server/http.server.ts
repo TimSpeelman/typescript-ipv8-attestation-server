@@ -1,5 +1,5 @@
 import express from "express";
-import { Dict } from "../types/Dict";
+import { Dict } from "../ipv8/types/Dict";
 import { Credential, ProcedureConfig } from "../types/types";
 import { AttestationServer } from "./attestation.server";
 

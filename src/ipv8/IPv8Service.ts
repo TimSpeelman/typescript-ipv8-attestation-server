@@ -1,6 +1,6 @@
 import { interval, Subscription } from "rxjs";
-import { CallbackDict } from "../util/CallbackDict";
 import { AttestationRequest, IPv8API, VerificationOutputMap } from "./IPv8API";
+import { CallbackDict } from "./util/CallbackDict";
 
 const log = console.log;
 

@@ -1,4 +1,4 @@
-import { Credential } from "../../types/types";
+import { AttributeWithHash } from "./Attribute";
 
 /**
  * The VerifierService verifies attributes through IPv8 and
@@ -9,7 +9,7 @@ export interface IVerifierService {
     verify(
         mid_b64: string,
         mid_hex: string,
-        credentials: Credential[],
+        credentials: AttributeWithHash[],
         options?: VerifyOptions
     ): Promise<boolean>;
 }

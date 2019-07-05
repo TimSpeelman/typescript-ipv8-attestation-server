@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import _ from "lodash";
-import { b64encode } from "../util/b64";
-import { queryString } from "../util/queryString";
+import { b64encode } from "./util/b64";
+import { queryString } from "./util/queryString";
 
 export class IPv8API {
 

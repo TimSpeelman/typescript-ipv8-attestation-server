@@ -1,4 +1,4 @@
-import { Dict } from "./Dict";
+import { Dict } from "../ipv8/types/Dict";
 
 export interface ServerId {
     http_address: string;
@@ -32,11 +32,6 @@ export interface ProcedureDescription {
 export interface ProcedureConfig {
     desc: ProcedureDescription;
     resolver: AttributeResolver;
-}
-
-export interface Attribute {
-    attribute_name: string;
-    attribute_value: string;
 }
 
 export type AttributeResolver = (credentials: Credential[]) => Promise<Attribute[]>;

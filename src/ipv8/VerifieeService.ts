@@ -1,6 +1,6 @@
 import { interval } from "rxjs";
-import { Dict } from "../types/Dict";
 import { IPv8API, VerificationRequest } from "./IPv8API";
+import { Dict } from "./types/Dict";
 import { IVerifieeService, NonStagedRequestCallback } from "./types/IVerifieeService";
 
 const log = console.log;

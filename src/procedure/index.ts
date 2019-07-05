@@ -1,4 +1,4 @@
-import { Dict } from "../types/Dict";
+import { Dict } from "../ipv8/types/Dict";
 import { ProcedureConfig } from "../types/types";
 import { bsnResolver } from "./bsn";
 import { bsnToKvknrResolver } from "./bsnToKvknr";

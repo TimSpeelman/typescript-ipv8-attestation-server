@@ -1,4 +1,4 @@
-import { Dict } from "../types/Dict";
+import { Dict } from "../ipv8/types/Dict";
 
 export class Database<Row> {
     constructor(private data: Dict<Row>) { }
