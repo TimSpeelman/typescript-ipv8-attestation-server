@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
-import _ from "lodash";
 import { b64encode } from "./util/b64";
+import { mapValues } from "./util/mapValues";
 import { queryString } from "./util/queryString";
 
 export class IPv8API {
@@ -59,7 +59,7 @@ export class IPv8API {
     /** List all verification outputs (pending and completed) */
     public listVerificationOutputs(): Promise<VerificationOutputMap> {
         return axios.get(this.api_base + "/attestation?type=verification_output")
-            .then((res) => _.mapValues(res.data, (pairs) => pairs.map(
+            .then((res) => mapValues(res.data, (pairs) => pairs.map(
                 ([value_hash, probability]: [string, number]) => ({ value_hash, probability }))))
             .catch(this.handleError.bind(this));
     }

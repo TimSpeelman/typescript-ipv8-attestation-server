@@ -1,6 +1,6 @@
-import { interval, Subscription } from "rxjs";
 import { AttestationRequest, IPv8API, VerificationOutputMap } from "./IPv8API";
 import { CallbackDict } from "./util/CallbackDict";
+import { interval, IntervalSubscription } from "./util/interval";
 
 const log = console.log;
 
@@ -10,7 +10,7 @@ export class IPv8Service {
     private verificationCallbacks = new CallbackDict<(b: any) => void>();
     private attestationRequestCallbacks = new CallbackDict<(a: AttestationRequest) => void>();
 
-    private interval: Subscription;
+    private interval: IntervalSubscription;
 
     constructor(private api: IPv8API) { }
 
