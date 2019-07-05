@@ -1,4 +1,4 @@
-import { IPv8Service } from "../ipv8/ipv8.service";
+import { IPv8Service } from "../ipv8/IPv8Service";
 import { Dict } from "../types/Dict";
 import { IVerifierService, VerifyOptions } from "../types/IVerifierService";
 import { Credential } from "../types/types";

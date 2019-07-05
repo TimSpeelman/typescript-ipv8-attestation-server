@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { interval } from "rxjs";
-import { Attestation, IPv8API } from "./ipv8/ipv8.api";
+import { Attestation, IPv8API } from "./ipv8/IPv8API";
 import { Dict } from "./types/Dict";
 import { IVerifieeService } from "./types/IVerifieeService";
 import { Attribute, ClientProcedure, Credential, PeerId } from "./types/types";

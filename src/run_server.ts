@@ -1,6 +1,6 @@
 import { serverPeer } from "./config";
-import { IPv8API } from "./ipv8/ipv8.api";
-import { IPv8Service } from "./ipv8/ipv8.service";
+import { IPv8API } from "./ipv8/IPv8API";
+import { IPv8Service } from "./ipv8/IPv8Service";
 import { config } from "./procedure";
 import { AttestationServer } from "./server/attestation.server";
 import { HttpAttestationServer } from "./server/http.server";

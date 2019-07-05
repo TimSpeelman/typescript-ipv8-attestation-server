@@ -1,5 +1,5 @@
 import uuid = require("uuid/v4");
-import { IPv8Service } from "../ipv8/ipv8.service";
+import { IPv8Service } from "../ipv8/IPv8Service";
 import { Dict } from "../types/Dict";
 import { IAttesterService } from "../types/IAttesterService";
 import { IVerifierService } from "../types/IVerifierService";

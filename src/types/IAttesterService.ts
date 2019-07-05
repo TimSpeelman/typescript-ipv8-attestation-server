@@ -1,4 +1,4 @@
-import { AttestationRequest } from "../ipv8/ipv8.api";
+import { AttestationRequest } from "../ipv8/IPv8API";
 import { Attribute } from "./types";
 
 /**

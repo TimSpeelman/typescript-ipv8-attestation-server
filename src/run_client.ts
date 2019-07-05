@@ -1,6 +1,6 @@
 import { AttestationClient } from "./attestation.client";
 import { clientPeer, serverPeer } from "./config";
-import { IPv8API } from "./ipv8/ipv8.api";
+import { IPv8API } from "./ipv8/IPv8API";
 import { VerifieeService } from "./services/VerifieeService";
 import { Dict } from "./types/Dict";
 import { Attribute, ClientProcedure, ProviderDesc } from "./types/types";

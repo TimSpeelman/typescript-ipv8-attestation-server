@@ -1,4 +1,4 @@
-import { VerificationRequest } from "../ipv8/ipv8.api";
+import { VerificationRequest } from "../ipv8/IPv8API";
 
 /**
  * The VerifieeService stages all allowed verifications and

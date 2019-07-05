@@ -1,5 +1,5 @@
-import { AttestationRequest } from "../ipv8/ipv8.api";
-import { IPv8Service } from "../ipv8/ipv8.service";
+import { AttestationRequest } from "../ipv8/IPv8API";
+import { IPv8Service } from "../ipv8/IPv8Service";
 import { Dict } from "../types/Dict";
 import { IAttesterService, NonStagedRequestCallback, QueuedAttestation } from "../types/IAttesterService";
 import { Attribute } from "../types/types";

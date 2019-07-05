@@ -1,5 +1,5 @@
 import { interval } from "rxjs";
-import { IPv8API, VerificationRequest } from "../ipv8/ipv8.api";
+import { IPv8API, VerificationRequest } from "../ipv8/IPv8API";
 import { Dict } from "../types/Dict";
 import { IVerifieeService, NonStagedRequestCallback } from "../types/IVerifieeService";
 
