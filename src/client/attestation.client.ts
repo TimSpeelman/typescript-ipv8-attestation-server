@@ -1,13 +1,13 @@
 import axios, { AxiosError } from "axios";
-import { Attestation, IPv8API } from "./ipv8/IPv8API";
-import { Attribute } from "./ipv8/types/Attribute";
-import { Dict } from "./ipv8/types/Dict";
-import { IVerifieeService } from "./ipv8/types/IVerifieeService";
-import { interval } from "./ipv8/util/interval";
-import { queryString } from "./ipv8/util/queryString";
-import {  ClientProcedure, Credential, PeerId } from "./types/types";
-import { promiseTimer } from "./util/promiseTimer";
-import { strlist } from "./util/strlist";
+import { Attestation, IPv8API } from "../ipv8/IPv8API";
+import { Attribute } from "../ipv8/types/Attribute";
+import { Dict } from "../ipv8/types/Dict";
+import { IVerifieeService } from "../ipv8/types/IVerifieeService";
+import { interval } from "../ipv8/util/interval";
+import { queryString } from "../ipv8/util/queryString";
+import {  ClientProcedure, Credential, PeerId } from "../types/types";
+import { promiseTimer } from "../util/promiseTimer";
+import { strlist } from "../util/strlist";
 
 const log = console.log;
 

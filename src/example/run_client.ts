@@ -1,10 +1,10 @@
-import { AttestationClient } from "./attestation.client";
+import { AttestationClient } from "../client/attestation.client";
+import { IPv8API } from "../ipv8/IPv8API";
+import { Attribute } from "../ipv8/types/Attribute";
+import { Dict } from "../ipv8/types/Dict";
+import { VerifieeService } from "../ipv8/VerifieeService";
+import { ClientProcedure, ProviderDesc } from "../types/types";
 import { clientPeer, serverPeer } from "./config";
-import { IPv8API } from "./ipv8/IPv8API";
-import { Attribute } from "./ipv8/types/Attribute";
-import { Dict } from "./ipv8/types/Dict";
-import { VerifieeService } from "./ipv8/VerifieeService";
-import { ClientProcedure, ProviderDesc } from "./types/types";
 
 const providers: Dict<ProviderDesc> = {
     kvk: {

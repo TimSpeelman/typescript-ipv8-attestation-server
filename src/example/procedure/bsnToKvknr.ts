@@ -1,5 +1,5 @@
-import { Database } from "../server/database";
-import { AttributeResolver, Credential } from "../types/types";
+import { Database } from "../../server/database";
+import { AttributeResolver, Credential } from "../../types/types";
 
 const db = new Database({
     bsn1: "kvk1",
