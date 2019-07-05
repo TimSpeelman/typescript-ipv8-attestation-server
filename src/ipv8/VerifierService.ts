@@ -19,7 +19,7 @@ export class VerifierService implements IVerifierService {
     }
 
     protected verifySingle(
-        mid_b64: string, mid_hex: string, credential: Credential, options?: VerifyOptions): Promise<boolean> {
+        mid_b64: string, mid_hex: string, credential: AttributeWithHash, options?: VerifyOptions): Promise<boolean> {
 
         const record: VerificationRecord = { credential, requestedAtTime: this.time() };
         this.put(mid_b64, record);
@@ -37,7 +37,7 @@ export class VerifierService implements IVerifierService {
             });
     }
 
-    protected isVerified(mid_b64: string, credential: Credential, maxAgeInSeconds: number): boolean {
+    protected isVerified(mid_b64: string, credential: AttributeWithHash, maxAgeInSeconds: number): boolean {
         const record = this.get(mid_b64).find((rec) => rec.credential.attribute_hash === credential.attribute_hash);
         const minTime = this.time() - maxAgeInSeconds;
         return record && record.verifiedAtTime && record.verifiedAtTime > minTime;
@@ -57,7 +57,7 @@ export class VerifierService implements IVerifierService {
 }
 
 interface VerificationRecord {
-    credential: Credential;
+    credential: AttributeWithHash;
     requestedAtTime: number;
     verifiedAtTime?: number;
 }
