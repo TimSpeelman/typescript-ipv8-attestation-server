@@ -1,16 +1,14 @@
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { Attestation, IPv8API } from "../ipv8/IPv8API";
 import { Attribute } from "../ipv8/types/Attribute";
 import { Dict } from "../ipv8/types/Dict";
 import { IVerifieeService } from "../ipv8/types/IVerifieeService";
 import { interval } from "../ipv8/util/interval";
-import { queryString } from "../ipv8/util/queryString";
 import { AttributeDescription, ClientProcedure, Credential, PeerId } from "../types/types";
 import { promiseTimer } from "../util/promiseTimer";
 import { strlist } from "../util/strlist";
 import { Validate } from "../util/validate";
-
-const log = console.log;
+import { APIClient } from "./apiClient";
 
 export class AttestationClient {
     public config = {
@@ -19,10 +17,12 @@ export class AttestationClient {
         pollAttestationRequestEveryMillis: 1000,
         allowVerificationTimeoutMillis: 10000,
     };
+
     constructor(
         private me: PeerId,
         private api: IPv8API,
         private verifeeService: IVerifieeService,
+        private logger: (...args: any[]) => any = console.log,
     ) { }
 
     /**
@@ -32,29 +32,33 @@ export class AttestationClient {
      */
     public async execute(procedure: ClientProcedure, credential_values: Dict<string>) {
         const { desc, server } = procedure;
-        log(`============= START =============`);
-        log(`> Initiating attestation procedure '${desc.procedure_name}'`);
-        log(`> Fetching required credentials: ${strlist(desc.requirements)}.`);
+        this.log(`============= START =============`);
+        this.log(`> Initiating attestation procedure '${desc.procedure_name}'`);
+        this.log(`> Fetching required credentials: ${strlist(desc.requirements)}.`);
         const credentials = await this.fetchClientCredentialHashes(desc.requirements, credential_values);
-        log(`> Initiating transaction..`);
+        this.log(`> Initiating transaction..`);
         await this.sendAttestationRequestToServer(procedure, credentials);
-        log(`> Awaiting verification of credentials..`);
+        this.log(`> Awaiting verification of credentials..`);
         const verificationValidUntil = Date.now() + this.config.allowVerificationTimeoutMillis;
         await this.verifeeService.stageVerification(server.mid_b64, desc.requirements, verificationValidUntil);
-        log(`> Polling server for attributes..`);
+        this.log(`> Polling server for attributes..`);
         const data = await this.pollServerForAttributeValues(procedure);
-        log(`> Data received from server:`);
-        log(data);
-        log(`> Requesting attestations of attributes: ${strlist(desc.attributes.map((a) => a.name))}..`);
+        this.log(`> Data received from server:`);
+        this.log(data);
+        this.log(`> Requesting attestations of attributes: ${strlist(desc.attributes.map((a) => a.name))}..`);
         const attestations = await this.requestAndAwaitAttestations(procedure);
-        log("> Attestations received: ");
-        log(attestations);
-        log(`=========== COMPLETE ============`);
+        this.log("> Attestations received: ");
+        this.log(attestations);
+        this.log(`=========== COMPLETE ============`);
 
         return {
             data,
             attestations
         };
+    }
+
+    public log(...args: any[]) {
+        if (this.logger) { this.logger(...args); }
     }
 
     /** Fetch the hashes belonging to specific attributes. */
@@ -84,24 +88,27 @@ export class AttestationClient {
      * Request the OWAttestationServer to stage our attributes and
      * verify our credentials if needed, passing the credential data.
      */
-    protected sendAttestationRequestToServer(procedure: ClientProcedure, credentials: Credential[]): Promise<string> {
-        const query_init = {
+    protected sendAttestationRequestToServer(procedure: ClientProcedure, credentials: Credential[]): Promise<void> {
+        const request = {
             procedure_id: procedure.desc.procedure_name,
             mid_hex: this.me.mid_hex,
             mid_b64: this.me.mid_b64,
-            credentials: JSON.stringify(credentials),
+            credentials,
         };
-        return axios.get(`${procedure.server.http_address}/init?${queryString(query_init)}`)
-            .then((response) => response.data.transaction_id)
-            .catch(this.logAxiosError.bind(this));
+        return new APIClient(axios, procedure.server.http_address).initiate(request);
     }
 
-    /** Wait for the server to offer the desired attributes. */
+    /**
+     * Fetches a list of attributes that the OWAttestationServer has staged for attestation.
+     * This could contain more than the attributes for this procedure, hence we wait for the
+     * desired names.
+     */
     protected async pollServerForAttributeValues(procedure: ClientProcedure): Promise<Attribute[]> {
         let attempt = 0;
 
         while (attempt++ < this.config.maxAttemptsToPollStagedAttributes) {
-            const response: any = await this.fetchStagedAttributesFromServer(procedure.server.http_address);
+            const api = new APIClient(axios, procedure.server.http_address);
+            const response: any = await api.staged({ mid: this.me.mid_b64 });
             const data = this.parseReceivedDataOrThrow(response);
             const desiredNames = procedure.desc.attributes.map((a) => a.name);
             const desiredData = data.filter((d) => desiredNames.indexOf(d.attribute_name) >= 0);
@@ -111,17 +118,6 @@ export class AttestationClient {
             await promiseTimer(this.config.pollStagedAttributesEveryMillis);
         }
         throw new Error("Server did not provide attribute values.");
-    }
-
-    /**
-     * Fetches a list of attributes that the OWAttestationServer has staged for attestation.
-     * This could contain more than the attributes for this procedure.
-     */
-    protected fetchStagedAttributesFromServer(server_http_address: string) {
-        const query_data = { mid: this.me.mid_b64 };
-        return axios.get(`${server_http_address}/data?${queryString(query_data)}`)
-            .then((response) => response.data)
-            .catch(this.logAxiosError.bind(this));
     }
 
     /**
@@ -149,10 +145,10 @@ export class AttestationClient {
         const { attributes: attribute_names } = procedure.desc;
         const attestations: Attestation[] = [];
         for (const attribute of attribute_names) {
-            log(`> Requesting attestation of ${attribute}.`);
+            this.log(`> Requesting attestation of ${attribute}.`);
             await this.requestAttestation(procedure, attribute);
             const attestation = await this.awaitAttestation(attribute.name);
-            log(`> Attestation of ${attribute} complete.`);
+            this.log(`> Attestation of ${attribute} complete.`);
             attestations.push(attestation);
         }
         return attestations;
@@ -187,12 +183,6 @@ export class AttestationClient {
                 });
             });
         });
-    }
-
-    protected logAxiosError(error: AxiosError) {
-        console.error("Request failed with status ",
-            error.response.status, "and data", error.response.data);
-        throw error;
     }
 
 }
