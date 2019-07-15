@@ -7,7 +7,7 @@ import { multiResolver } from "./multi";
 export const config: Dict<ProcedureConfig> = {
     p_kvknr: {
         desc: {
-            attribute_names: ["kvknr"],
+            attributes: [{ name: "kvknr", type: "id_metadata" }],
             procedure_name: "p_kvknr",
             requirements: ["bsn"],
         },
@@ -15,7 +15,7 @@ export const config: Dict<ProcedureConfig> = {
     },
     p_bsn: {
         desc: {
-            attribute_names: ["bsn"],
+            attributes: [{ name: "bsn", type: "id_metadata" }],
             procedure_name: "p_bsn",
             requirements: [],
         },
@@ -23,7 +23,7 @@ export const config: Dict<ProcedureConfig> = {
     },
     p_multi: {
         desc: {
-            attribute_names: ["kvk_att1", "kvk_att2"],
+            attributes: [{ name: "kvk_att1", type: "id_metadata" }, { name: "kvk_att2", type: "id_metadata" }],
             procedure_name: "p_multi",
             requirements: ["bsn"],
         },

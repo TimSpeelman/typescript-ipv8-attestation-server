@@ -15,17 +15,17 @@ const providers: Dict<ProviderDesc> = {
         procedures: {
             p_kvknr: {
                 procedure_name: "p_kvknr",
-                attribute_names: ["kvknr"],
+                attributes: [{ name: "kvknr", type: "id_metadata" }],
                 requirements: ["bsn"],
             },
             p_bsn: {
                 procedure_name: "p_bsn",
-                attribute_names: ["bsn"],
+                attributes: [{ name: "bsn", type: "id_metadata" }],
                 requirements: [],
             },
             p_multi: {
                 procedure_name: "p_multi",
-                attribute_names: ["kvk_att1", "kvk_att2"],
+                attributes: [{ name: "kvk_att1", type: "id_metadata" }, { name: "kvk_att2", type: "id_metadata" }],
                 requirements: ["bsn"],
             }
         }

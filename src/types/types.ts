@@ -1,3 +1,4 @@
+import { Attribute } from "../ipv8/types/Attribute";
 import { Dict } from "../ipv8/types/Dict";
 
 export interface ServerId {
@@ -26,7 +27,12 @@ export interface Credential {
 export interface ProcedureDescription {
     procedure_name: string;
     requirements: string[];
-    attribute_names: string[];
+    attributes: AttributeDescription[];
+}
+
+export interface AttributeDescription {
+    name: string;
+    type: string;
 }
 
 export interface ProcedureConfig {

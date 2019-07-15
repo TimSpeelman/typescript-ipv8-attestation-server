@@ -5,7 +5,7 @@ import { Dict } from "../ipv8/types/Dict";
 import { IVerifieeService } from "../ipv8/types/IVerifieeService";
 import { interval } from "../ipv8/util/interval";
 import { queryString } from "../ipv8/util/queryString";
-import { ClientProcedure, Credential, PeerId } from "../types/types";
+import { AttributeDescription, ClientProcedure, Credential, PeerId } from "../types/types";
 import { promiseTimer } from "../util/promiseTimer";
 import { strlist } from "../util/strlist";
 import { Validate } from "../util/validate";
@@ -13,8 +13,12 @@ import { Validate } from "../util/validate";
 const log = console.log;
 
 export class AttestationClient {
-    public max_attempts: number = 20;
-    public poll_interval_ms: number = 1000;
+    public config = {
+        maxAttemptsToPollStagedAttributes: 20,
+        pollStagedAttributesEveryMillis: 1000,
+        pollAttestationRequestEveryMillis: 1000,
+        allowVerificationTimeoutMillis: 10000,
+    };
     constructor(
         private me: PeerId,
         private api: IPv8API,
@@ -27,21 +31,21 @@ export class AttestationClient {
      * @param credential_values The values of all required credentials
      */
     public async execute(procedure: ClientProcedure, credential_values: Dict<string>) {
-        const { desc } = procedure;
+        const { desc, server } = procedure;
         log(`============= START =============`);
-        log(`> Initiating attestation procedure '${procedure.desc.procedure_name}'`);
+        log(`> Initiating attestation procedure '${desc.procedure_name}'`);
         log(`> Fetching required credentials: ${strlist(desc.requirements)}.`);
         const credentials = await this.fetchClientCredentialHashes(desc.requirements, credential_values);
         log(`> Initiating transaction..`);
-        const transaction_id = await this.sendAttestationRequestToServer(procedure, credentials);
+        await this.sendAttestationRequestToServer(procedure, credentials);
         log(`> Awaiting verification of credentials..`);
-        await this.verifeeService.stageVerification(
-            procedure.server.mid_b64, desc.requirements, Date.now() + 10000);
+        const verificationValidUntil = Date.now() + this.config.allowVerificationTimeoutMillis;
+        await this.verifeeService.stageVerification(server.mid_b64, desc.requirements, verificationValidUntil);
         log(`> Polling server for attributes..`);
         const data = await this.pollServerForAttributeValues(procedure);
         log(`> Data received from server:`);
         log(data);
-        log(`> Requesting attestations of attributes: ${strlist(desc.attribute_names)}..`);
+        log(`> Requesting attestations of attributes: ${strlist(desc.attributes.map((a) => a.name))}..`);
         const attestations = await this.requestAndAwaitAttestations(procedure);
         log("> Attestations received: ");
         log(attestations);
@@ -96,15 +100,15 @@ export class AttestationClient {
     protected async pollServerForAttributeValues(procedure: ClientProcedure): Promise<Attribute[]> {
         let attempt = 0;
 
-        while (attempt++ < this.max_attempts) {
+        while (attempt++ < this.config.maxAttemptsToPollStagedAttributes) {
             const response: any = await this.fetchStagedAttributesFromServer(procedure.server.http_address);
             const data = this.parseReceivedDataOrThrow(response);
-            const desiredNames = procedure.desc.attribute_names;
+            const desiredNames = procedure.desc.attributes.map((a) => a.name);
             const desiredData = data.filter((d) => desiredNames.indexOf(d.attribute_name) >= 0);
             if (desiredData.length === desiredNames.length) {
                 return desiredData;
             }
-            await promiseTimer(this.poll_interval_ms);
+            await promiseTimer(this.config.pollStagedAttributesEveryMillis);
         }
         throw new Error("Server did not provide attribute values.");
     }
@@ -142,38 +146,38 @@ export class AttestationClient {
     }
 
     protected async requestAndAwaitAttestations(procedure: ClientProcedure) {
-        const { attribute_names } = procedure.desc;
+        const { attributes: attribute_names } = procedure.desc;
         const attestations: Attestation[] = [];
-        for (const attr of attribute_names) {
-            log(`> Requesting attestation of ${attr}.`);
-            await this.requestAttestation(procedure, attr);
-            const attestation = await this.awaitAttestation(procedure, attr);
-            log(`> Attestation of ${attr} complete.`);
+        for (const attribute of attribute_names) {
+            log(`> Requesting attestation of ${attribute}.`);
+            await this.requestAttestation(procedure, attribute);
+            const attestation = await this.awaitAttestation(attribute.name);
+            log(`> Attestation of ${attribute} complete.`);
             attestations.push(attestation);
         }
         return attestations;
     }
 
     /** Request the attestation */
-    protected async requestAttestation(procedure: ClientProcedure, attribute_name: string) {
+    protected async requestAttestation(procedure: ClientProcedure, attribute: AttributeDescription) {
         return this.api.requestAttestation(
             procedure.server.mid_b64,
-            attribute_name,
-            "id_metadata"
+            attribute.name,
+            attribute.type,
         );
     }
 
     protected async awaitAllAttestations(procedure: ClientProcedure): Promise<Dict<Attestation>> {
-        const { attribute_names } = procedure.desc;
-        const promises = attribute_names.map((attr) => this.awaitAttestation(procedure, attr));
+        const { attributes } = procedure.desc;
+        const promises = attributes.map((attr) => this.awaitAttestation(attr.name));
         return Promise.all(promises).then((results: Attestation[]) =>
-            results.reduce((map, r, i) => ({ ...map, [attribute_names[i]]: r }), {}));
+            results.reduce((map, r, i) => ({ ...map, [attributes[i].name]: r }), {}));
     }
 
     /** Await the receipt of attestations */
-    protected async awaitAttestation(procedure: ClientProcedure, attr_name: string): Promise<Attestation> {
+    protected async awaitAttestation(attr_name: string): Promise<Attestation> {
         return new Promise((resolve) => {
-            const sub = interval(1000).subscribe(() => {
+            const sub = interval(this.config.pollAttestationRequestEveryMillis).subscribe(() => {
                 this.api.listAttestations().then((atts) => {
                     const att = atts.find((a) => a.attribute_name === attr_name);
                     if (att) {
@@ -183,15 +187,6 @@ export class AttestationClient {
                 });
             });
         });
-    }
-
-    protected async requirePeer(mid_b64: string): Promise<boolean> {
-        const peers = await this.api.listPeers();
-        if (peers.indexOf(mid_b64) >= 0) {
-            return true;
-        } else {
-            throw new Error(`Required peer ${mid_b64}, but is unknown!`);
-        }
     }
 
     protected logAxiosError(error: AxiosError) {
