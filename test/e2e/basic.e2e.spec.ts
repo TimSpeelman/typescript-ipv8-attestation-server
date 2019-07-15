@@ -1,14 +1,9 @@
 import { AttestationClient } from "../../src/client/attestation.client";
 import { clientPeer, serverPeer } from "../../src/example/config";
-import { AttesterService } from "../../src/ipv8/AttesterService";
 import { IPv8API } from "../../src/ipv8/IPv8API";
-import { IPv8Service } from "../../src/ipv8/IPv8Service";
 import { Attribute } from "../../src/ipv8/types/Attribute";
 import { Dict } from "../../src/ipv8/types/Dict";
 import { VerifieeService } from "../../src/ipv8/VerifieeService";
-import { VerifierService } from "../../src/ipv8/VerifierService";
-import { AttestationRequestResolver } from "../../src/server/attestation.server";
-import { HttpAttestationServer } from "../../src/server/http.server";
 import { AttestationServer } from "../../src/server/server";
 import { ClientProcedure, ProcedureConfig } from "../../src/types/types";
 import { describe, expect, it } from "../tools";
