@@ -7,7 +7,7 @@ import {  Credential, PeerId, ProcedureConfig } from "../types/types";
 
 const log = console.log;
 
-export class AttestationServer {
+export class AttestationRequestResolver {
 
     private transactions: Dict<Transaction> = {};
 

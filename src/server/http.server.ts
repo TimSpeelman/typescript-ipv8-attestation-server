@@ -1,13 +1,13 @@
 import express from "express";
 import { Dict } from "../ipv8/types/Dict";
 import { Credential, ProcedureConfig } from "../types/types";
-import { AttestationServer } from "./attestation.server";
+import { AttestationRequestResolver } from "./attestation.server";
 
 export class HttpAttestationServer {
 
     constructor(
         private configuration: Dict<ProcedureConfig>,
-        private attestationServer: AttestationServer,
+        private attestationServer: AttestationRequestResolver,
         private port: number
     ) { }
 

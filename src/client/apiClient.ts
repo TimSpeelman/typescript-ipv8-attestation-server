@@ -26,8 +26,13 @@ export class APIClient implements AttestationServerRESTAPI {
     }
 
     protected logAxiosError(error: AxiosError) {
-        console.error("Request failed with status ",
-            error.response.status, "and data", error.response.data);
+        if (error.response) {
+            console.error("Request failed with status ",
+                error.response.status, "and data", error.response.data);
+        } else {
+            console.error("Request failed",
+                error);
+        }
         throw error;
     }
 }

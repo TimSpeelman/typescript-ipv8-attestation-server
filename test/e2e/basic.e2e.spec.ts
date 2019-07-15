@@ -7,8 +7,9 @@ import { Attribute } from "../../src/ipv8/types/Attribute";
 import { Dict } from "../../src/ipv8/types/Dict";
 import { VerifieeService } from "../../src/ipv8/VerifieeService";
 import { VerifierService } from "../../src/ipv8/VerifierService";
-import { AttestationServer } from "../../src/server/attestation.server";
+import { AttestationRequestResolver } from "../../src/server/attestation.server";
 import { HttpAttestationServer } from "../../src/server/http.server";
+import { AttestationServer } from "../../src/server/server";
 import { ClientProcedure, ProcedureConfig } from "../../src/types/types";
 import { describe, expect, it } from "../tools";
 
@@ -31,6 +32,7 @@ describe("Basic Client-Server Attestation without verification", function () {
 
     it("attests without verification if not required", async function () {
         const server = mockAttestationServer();
+        server.start();
         const client = mockAttestationClient();
         const procedure: ClientProcedure = {
             server: {
@@ -85,22 +87,15 @@ function executeProcedureFromClient(
 }
 
 function mockAttestationServer() {
-    const time = Date.now;
-    const api = new IPv8API(serverPeer.ipv8_url);
-    const service = new IPv8Service(api);
-    const attesterService = new AttesterService(service, time);
-    const verifierService = new VerifierService(service, time);
-    const attServ = new AttestationServer(attesterService, verifierService, time, { attestationTimeoutInSeconds: 60 });
-
-    const procedureConfiguration: Dict<ProcedureConfig> = {
+    const procedures: Dict<ProcedureConfig> = {
         procedureZero: {
             desc: config.procedureZero,
             resolver: config.zeroResolver,
         },
     };
-    const httpServer = new HttpAttestationServer(procedureConfiguration, attServ, serverPeer.rest_port);
-
-    // Need to start polling
-    service.start();
-    httpServer.start();
+    const options = {
+        ipv8_url: serverPeer.ipv8_url,
+        http_port: serverPeer.rest_port,
+    };
+    return new AttestationServer(procedures, options);
 }
