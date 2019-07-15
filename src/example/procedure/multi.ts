@@ -1,6 +1,6 @@
 
-import { Database } from "../../server/database";
 import { AttributeResolver, Credential } from "../../types/types";
+import { Database } from "../Database";
 
 const db = new Database({
     bsn1: { kvk_att1: "kvk1x1", kvk_att2: "kvk2x1" },

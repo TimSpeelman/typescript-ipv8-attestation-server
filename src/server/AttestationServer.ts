@@ -4,8 +4,8 @@ import { IPv8Service } from "../ipv8/IPv8Service";
 import { Dict } from "../ipv8/types/Dict";
 import { VerifierService } from "../ipv8/VerifierService";
 import { ProcedureConfig } from "../types/types";
-import { AttestationRequestResolver } from "./attestation.server";
-import { HttpAttestationServer } from "./http.server";
+import { AttestationRequestResolver } from "./AttestationRequestResolver";
+import { HttpServer } from "./HttpServer";
 
 export class AttestationServer {
 
@@ -28,7 +28,7 @@ export class AttestationServer {
             { attestationTimeoutInSeconds: 60 }
         );
 
-        const httpServer = new HttpAttestationServer(
+        const httpServer = new HttpServer(
             this.procedures,
             requestResolver,
             this.config.http_port,

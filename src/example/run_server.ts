@@ -2,8 +2,8 @@ import { AttesterService } from "../ipv8/AttesterService";
 import { IPv8API } from "../ipv8/IPv8API";
 import { IPv8Service } from "../ipv8/IPv8Service";
 import { VerifierService } from "../ipv8/VerifierService";
-import { AttestationRequestResolver } from "../server/attestation.server";
-import { HttpAttestationServer } from "../server/http.server";
+import { AttestationRequestResolver } from "../server/AttestationRequestResolver";
+import { HttpServer } from "../server/HttpServer";
 import { serverPeer } from "./config";
 import { config } from "./procedure";
 
@@ -15,7 +15,7 @@ const verifierService = new VerifierService(service, time);
 const attServ = new AttestationRequestResolver(
     attesterService, verifierService, time, {attestationTimeoutInSeconds: 60});
 
-const httpServer = new HttpAttestationServer(config, attServ, serverPeer.rest_port);
+const httpServer = new HttpServer(config, attServ, serverPeer.rest_port);
 
 // Need to start polling
 service.start();

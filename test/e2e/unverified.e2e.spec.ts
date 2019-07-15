@@ -3,7 +3,7 @@ import { AttestationClient } from "../../src/client/AttestationClientRunner";
 import { clientPeer, serverPeer } from "../../src/example/config";
 import { Attribute } from "../../src/ipv8/types/Attribute";
 import { Dict } from "../../src/ipv8/types/Dict";
-import { AttestationServer } from "../../src/server/server";
+import { AttestationServer } from "../../src/server/AttestationServer";
 import { ClientProcedure, ProcedureConfig } from "../../src/types/types";
 import { describe, expect, it } from "../tools";
 

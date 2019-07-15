@@ -8,7 +8,7 @@ import { AttributeDescription, ClientProcedure, Credential, PeerId } from "../ty
 import { promiseTimer } from "../util/promiseTimer";
 import { strlist } from "../util/strlist";
 import { Validate } from "../util/validate";
-import { APIClient } from "./apiClient";
+import { HttpAPIGateway } from "./HttpAPIGateway";
 
 export class AttestationClient {
     public config = {
@@ -95,7 +95,7 @@ export class AttestationClient {
             mid_b64: this.me.mid_b64,
             credentials,
         };
-        return new APIClient(axios, procedure.server.http_address).initiate(request);
+        return new HttpAPIGateway(axios, procedure.server.http_address).initiate(request);
     }
 
     /**
@@ -107,7 +107,7 @@ export class AttestationClient {
         let attempt = 0;
 
         while (attempt++ < this.config.maxAttemptsToPollStagedAttributes) {
-            const api = new APIClient(axios, procedure.server.http_address);
+            const api = new HttpAPIGateway(axios, procedure.server.http_address);
             const response: any = await api.staged({ mid: this.me.mid_b64 });
             const data = this.parseReceivedDataOrThrow(response);
             const desiredNames = procedure.desc.attributes.map((a) => a.name);

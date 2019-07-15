@@ -1,9 +1,9 @@
 import { AxiosError, AxiosInstance } from "axios";
 import { Attribute } from "../ipv8/types/Attribute";
 import { queryString } from "../ipv8/util/queryString";
-import { AttestationServerRESTAPI, ReqInitiate, ReqStaged } from "../server/api";
+import { IAttestationServerRESTAPI, ReqInitiate, ReqStaged } from "../server/IAttestationServerRESTAPI";
 
-export class APIClient implements AttestationServerRESTAPI {
+export class HttpAPIGateway implements IAttestationServerRESTAPI {
     constructor(
         private axios: AxiosInstance,
         private server_http_address: string

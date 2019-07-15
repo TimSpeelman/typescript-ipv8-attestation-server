@@ -1,9 +1,9 @@
 import express from "express";
 import { Dict } from "../ipv8/types/Dict";
 import { Credential, ProcedureConfig } from "../types/types";
-import { AttestationRequestResolver } from "./attestation.server";
+import { AttestationRequestResolver } from "./AttestationRequestResolver";
 
-export class HttpAttestationServer {
+export class HttpServer {
 
     constructor(
         private configuration: Dict<ProcedureConfig>,
