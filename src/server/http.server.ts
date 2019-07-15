@@ -51,9 +51,9 @@ export class HttpAttestationServer {
 
         app.get("/data", (req, res) => {
             res.setHeader("content-type", "application/json");
-            const { mid, transaction_id } = req.query;
-            if (!mid || !transaction_id) {
-                res.status(400).send({ error: "requires mid and transaction_id" });
+            const { mid } = req.query;
+            if (!mid ) {
+                res.status(400).send({ error: "requires mid " });
             }
             console.log("REST: Received /data", req.query);
             res.send(this.attestationServer.getQueuedAttributes(mid));
