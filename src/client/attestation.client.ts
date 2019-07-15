@@ -30,7 +30,7 @@ export class AttestationClient {
      * @param procedure The procedure description
      * @param credential_values The values of all required credentials
      */
-    public async execute(procedure: ClientProcedure, credential_values: Dict<string>) {
+    public async execute(procedure: ClientProcedure, credential_values: Dict<string>): Promise<OWResponse> {
         const { desc, server } = procedure;
         this.log(`============= START =============`);
         this.log(`> Initiating attestation procedure '${desc.procedure_name}'`);
@@ -185,4 +185,9 @@ export class AttestationClient {
         });
     }
 
+}
+
+export interface OWResponse {
+    data: Attribute[];
+    attestations: Attestation[];
 }
