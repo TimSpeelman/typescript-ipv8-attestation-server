@@ -1,6 +1,4 @@
-import axios from "axios";
-import { APIClient } from "../client/apiClient";
-import { AttestationClient } from "../client/attestation.client";
+import { AttestationClient } from "../client/AttestationClientRunner";
 import { IPv8API } from "../ipv8/IPv8API";
 import { Attribute } from "../ipv8/types/Attribute";
 import { Dict } from "../ipv8/types/Dict";

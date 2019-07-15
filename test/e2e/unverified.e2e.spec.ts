@@ -1,9 +1,8 @@
-import { AttestationClient } from "../../src/client/attestation.client";
+import { AttestationClientFactory } from "../../src/client/AttestationClientFactory";
+import { AttestationClient } from "../../src/client/AttestationClientRunner";
 import { clientPeer, serverPeer } from "../../src/example/config";
-import { IPv8API } from "../../src/ipv8/IPv8API";
 import { Attribute } from "../../src/ipv8/types/Attribute";
 import { Dict } from "../../src/ipv8/types/Dict";
-import { VerifieeService } from "../../src/ipv8/VerifieeService";
 import { AttestationServer } from "../../src/server/server";
 import { ClientProcedure, ProcedureConfig } from "../../src/types/types";
 import { describe, expect, it } from "../tools";
@@ -53,17 +52,9 @@ describe("Basic Client-Server Attestation without verification", function () {
 });
 
 function mockAttestationClient() {
-    const time = Date.now;
-    const api = new IPv8API(clientPeer.ipv8_url);
-    const verifieeService = new VerifieeService(api, time);
-    return new AttestationClient(
-        {
-            mid_hex: clientPeer.mid_hex,
-            mid_b64: clientPeer.mid_b64,
-        },
-        api,
-        verifieeService
-    );
+    const { ipv8_url, mid_hex, mid_b64 } = clientPeer;
+    const factory = new AttestationClientFactory({ ipv8_url, mid_b64, mid_hex });
+    return factory.create();
 }
 
 function executeProcedureFromClient(
