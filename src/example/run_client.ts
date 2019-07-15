@@ -1,8 +1,7 @@
-import { AttestationClient } from "../client/AttestationClientRunner";
+import { AttestationClientFactory } from "../client/AttestationClientFactory";
 import { IPv8API } from "../ipv8/IPv8API";
 import { Attribute } from "../ipv8/types/Attribute";
 import { Dict } from "../ipv8/types/Dict";
-import { VerifieeService } from "../ipv8/VerifieeService";
 import { ClientProcedure, ProviderDesc } from "../types/types";
 import { clientPeer, serverPeer } from "./config";
 
@@ -53,13 +52,13 @@ const clientId = {
 const clientAttributes: Dict<string> = {};
 
 async function run() {
-    const time = Date.now;
-
-    const verifieeService = new VerifieeService(clientId.api, time);
-    const attClient = new AttestationClient({
-        mid_hex: clientId.mid_hex,
-        mid_b64: clientId.mid_b64,
-    }, clientId.api, verifieeService);
+    const config = {
+        mid_hex: clientPeer.mid_hex,
+        mid_b64: clientPeer.mid_b64,
+        ipv8_url: clientPeer.ipv8_url,
+    };
+    const factory = new AttestationClientFactory(config);
+    const client = factory.create();
 
     const do_bsn = true;
     const do_kvk = true;
@@ -72,7 +71,7 @@ async function run() {
     }
 
     async function executeProcedure(providerName: string, procedureId: string) {
-        await attClient.execute(getProcedure(providerName, procedureId), clientAttributes)
+        await client.execute(getProcedure(providerName, procedureId), clientAttributes)
             .then(({ data, attestations }: any) => {
                 data.forEach((attr: Attribute) => {
                     // @ts-ignore
