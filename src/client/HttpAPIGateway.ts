@@ -10,11 +10,7 @@ export class HttpAPIGateway implements IAttestationServerRESTAPI {
     ) { }
 
     public initiate(req: ReqInitiate): Promise<void> {
-        const reqFormatted = {
-            ...req,
-            credentials: JSON.stringify(req.credentials),
-        };
-        return this.axios.get(`${this.server_http_address}/init?${queryString(reqFormatted)}`)
+        return this.axios.post(`${this.server_http_address}/init`, req)
             .then(() => null)
             .catch(this.logAxiosError.bind(this));
     }

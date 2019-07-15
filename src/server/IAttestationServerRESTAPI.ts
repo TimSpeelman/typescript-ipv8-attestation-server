@@ -1,5 +1,4 @@
 import { Attribute } from "../ipv8/types/Attribute";
-import { Dict } from "../ipv8/types/Dict";
 import { Credential } from "../types/types";
 
 /** We share a typescript interface between front and backend. */
@@ -16,5 +15,5 @@ export interface ReqInitiate {
 }
 
 export interface ReqStaged {
-    mid: string;
+    mid_b64: string;
 }

@@ -22,7 +22,12 @@ const V = {
             const error = d.reduce((err, elem) => err ? err : validate(elem), false);
             return error ? `Invalid array element: ${error}` : false;
         }
-    ])
+    ]),
+
+    atKey: (key: string, validate: Validator) => (d: any) => {
+        const error = validate(d[key]);
+        return error ? `At key ${key}: ${error}` : false;
+    }
 };
 
 export const Validate = V;

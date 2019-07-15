@@ -108,7 +108,7 @@ export class AttestationClient {
 
         while (attempt++ < this.config.maxAttemptsToPollStagedAttributes) {
             const api = new HttpAPIGateway(axios, procedure.server.http_address);
-            const response: any = await api.staged({ mid: this.me.mid_b64 });
+            const response: any = await api.staged({ mid_b64: this.me.mid_b64 });
             const data = this.parseReceivedDataOrThrow(response);
             const desiredNames = procedure.desc.attributes.map((a) => a.name);
             const desiredData = data.filter((d) => desiredNames.indexOf(d.attribute_name) >= 0);
